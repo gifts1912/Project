@@ -209,7 +209,7 @@ function MSSFDecode(addQuery) {
                 continue;
            }
             var majorType = clusterIdToIntentType[clusterId]; // global variable clusterIdToIntentType; 
-//LogDebug("MSSFDecode key==intity", majorType, "majorType\r\n");
+//LogDebug("-4->", majorType, "<-4-\r\n");
             var intentTypeSpans = {};
             var intentTypeSpansArr = value.split("^");
             for (var k = 0, len = intentTypeSpansArr.length; k < len; k++){
@@ -239,7 +239,7 @@ function MSSFDecode(addQuery) {
                         }
                     }*/
 					majorIntent = new IntentClass(intentType, span);
-//LogDebug("majorIntentsBegin", majorIntents, "majorIntentsListEnd\r\n");
+//LogDebug("majorIntentsBegin", majorIntent.type, majorIntent.span, "majorIntentsListEnd\r\n");
                 }
                 else {
 					/*
@@ -861,15 +861,15 @@ function TermArrayMatchingExactPhrase(keyWords, url, titile, snippet){
 	return matchTermArray;
 }
 
-function GenerateIntentMatchingScore(majorIntent, otherIntents, matchData, queryTermDict, wordFoundTitleArray, wordFoundBodyArray){
-LogDebug("GenerateIntentMatchingScore_SpecifiedIntent(majorIntent, matchData, queryTermDict)Begin", '\r\n');
+function GenerateIntentMatchingScore(otherIntents, majorIntent, matchData, queryTermDict, wordFoundTitleArray, wordFoundBodyArray){
+LogDebug("-2->", majorIntent.span, "<-2-", '\r\n');
 	var majorIntentMatch = GenerateIntentMatchingScore_SpecifiedIntent(majorIntent, matchData, queryTermDict);
-	
+LogDebug("-3->", majorIntentMatch, "<-3-", '\r\n');
 	var otherIntentMatch = 0.0;
 	var len = otherIntents.length;
 	for(var i = 0; i < len; i++) {
 		var intent = otherIntents[i];
-LogDebug("GenerateIntentMatchingScore_SpecifiedIntent(intent, matchData, queryTermDict)Begin", '\r\n');
+//LogDebug("GenerateIntentMatchingScore_SpecifiedIntent(intent, matchData, queryTermDict)Begin", '\r\n');
 		otherIntentMatch += GenerateIntentMatchingScore_SpecifiedIntent(intent, matchData, queryTermDict);
 	}
 	if (len != 0) {
@@ -877,7 +877,7 @@ LogDebug("GenerateIntentMatchingScore_SpecifiedIntent(intent, matchData, queryTe
 	}
 	var score = 0.7 * majorIntentMatch + 0.3 * otherIntentMatch;
 	score = NormalizeIntentMatchingScore(score);
-LogDebug("NormalizeIntentMatchingScore(score)End", '\r\n');
+//LogDebug("NormalizeIntentMatchingScore(score)End", '\r\n');
 	return score;
 }
 
@@ -885,11 +885,11 @@ function GenerateIntentMatchingScore_SpecifiedIntent(intent, matchData, queryTer
     var url = matchData.url;
     var title = matchData.title;
     var snippet = matchData.snippet;
-	var span = intent.span;
+	var span = intent.span; 
 	var type = intent.type;
     var score = 0;
 	var matchTermArray = new Array(3);
-LogDebug("TermMatchWordsFound(span, queryTermDict, url, title, snippet, matchData.wordFoundTitleArray, matchData.wordFoundBodyArray)Begin", '\r\n');
+LogDebug("-5->", span, "<-5-");
 	matchTermArray = TermMatchWordsFound(span, queryTermDict, url, title, snippet, matchData.wordFoundTitleArray, matchData.wordFoundBodyArray);
 	
 	var matchAliasArray = new Array(3);
@@ -1967,18 +1967,18 @@ LogDebug("\turlBegin:", url, 'urlEnd\t');
 	LogDebug("entity", x, MSSFDecodeResult.entity[x].text, '\r\n');
 }*/
             var entityMatchScore = GenerateEntityMatchingScore(MSSFDecodeResult.entity, matchData);//feature:entity, matchData Contain the feature "NumberOfOccurrences_MultiInstanceTitle_0, ... , NumberOfOccurrences_MultiInstanceTitle_7"
-LogDebug(" entityMatchScoreBegin", entityMatchScore, 'entityMatchScoreEnd', '\r\n');
+//LogDebug(" entityMatchScoreBegin", entityMatchScore, 'entityMatchScoreEnd', '\r\n');
             topSiteScoreResult = PETopSiteScoreDecode(featureVector[c_FeatureId_PEScoreTopSite], MSSFDecodeResult.urlKeyword, url, featureVector[c_FeatureId_UrlDepth]);
             authorityIsSiteConsMatchScore = GenerateAuthorityScore(topSiteScoreResult.authorityScore, MSSFDecodeResult.entity, MSSFDecodeResult.siteConstraint, url, curDoc.hostid, curDoc.domainid, MSSFDecodeResult.officialSite, i);
             isSiteConsMatchDomain = authorityIsSiteConsMatchScore[1];
             var authorityScore = authorityIsSiteConsMatchScore[0];
-LogDebug(" authorityScoreBegin", authorityScore, 'authorityScoreEnd', '\r\n');
+//LogDebug(" authorityScoreBegin", authorityScore, 'authorityScoreEnd', '\r\n');
             specificSiteScore = topSiteScoreResult.isSpecific;
             //var intentMatchScore = GenerateIntentMatchingScore(intentMatchCondition, MSSFDecodeResult.intent, matchData, topSiteScoreResult.isIntent);
 //LogDebug(i,"->", "otherIntentsBegin", MSSFDecodeResult.otherIntents, "otherIntentsEnd\r\n");
-//LogDebug(i,"->", "majorIntentsBegin", MSSFDecodeResult.majorIntents, "majorIntentsEnd\r\n");
+LogDebug("-0->", MSSFDecodeResult.majorIntent.type, MSSFDecodeResult.majorIntent.span, "<-0-\r\n");
             var intentMatchScore = GenerateIntentMatchingScore(MSSFDecodeResult.otherIntents, MSSFDecodeResult.majorIntent, matchData, queryTermDict);//generate intent feature score
-LogDebug(" intentMatchScoreBegin", intentMatchScore, 'intentMatchScoreEnd', '\r\n');
+LogDebug("-1->", intentMatchScore, '<-1-', '\r\n');
             keyFeaturesOfDocuments.push(new KeyFeatures(entityMatchScore, intentMatchScore, authorityScore, specificSiteScore, 0, 0, topSiteScoreResult, rankScoreVector[i].drScoreRank, 0, isSiteConsMatchDomain));//add intentMatchScore && constraintMatchScore
             top1EntityMatch = entityMatchScore;
             top1IntentMatch = intentMatchScore;
@@ -1996,18 +1996,19 @@ LogDebug(" intentMatchScoreBegin", intentMatchScore, 'intentMatchScoreEnd', '\r\
         if (i > 0)
         {
             var entityMatchScore = GenerateEntityMatchingScore(MSSFDecodeResult.entity, matchData);//feature:entity, matchData Contain the feature "NumberOfOccurrences_MultiInstanceTitle_0, ... , NumberOfOccurrences_MultiInstanceTitle_7"
-LogDebug(" entityMatchScoreBegin", entityMatchScore, 'entityMatchScoreEnd ', '\r\n');
+//LogDebug(" entityMatchScoreBegin", entityMatchScore, 'entityMatchScoreEnd ', '\r\n');
             topSiteScoreResult = PETopSiteScoreDecode(featureVector[c_FeatureId_PEScoreTopSite], MSSFDecodeResult.urlKeyword, url, featureVector[c_FeatureId_UrlDepth]);
             //authorityScore = GenerateAuthorityScore(topSiteScoreResult.authorityScore, MSSFDecodeResult.entity, MSSFDecodeResult.siteConstraint, url, curDoc.hostid, curDoc.domainid, MSSFDecodeResult.officialSite, i);
             authorityIsSiteConsMatchScore = GenerateAuthorityScore(topSiteScoreResult.authorityScore, MSSFDecodeResult.entity, MSSFDecodeResult.siteConstraint, url, curDoc.hostid, curDoc.domainid, MSSFDecodeResult.officialSite, i);
             isSiteConsMatchDomain = authorityIsSiteConsMatchScore[1];
 //LogDebug("isSiteConsMatchDomain", i, isSiteConsMatchDomain, '\r\n');
             var authorityScore = authorityIsSiteConsMatchScore[0];
-LogDebug(" authorityScoreBegin", authorityScore, 'authorityScoreEnd', '\r\n');
+//LogDebug(" authorityScoreBegin", authorityScore, 'authorityScoreEnd', '\r\n');
             specificSiteScore = topSiteScoreResult.isSpecific;
             //var intentMatchScore = GenerateIntentMatchingScore(intentMatchCondition, MSSFDecodeResult.intent, matchData, topSiteScoreResult.isIntent);//@Frank generate intent feature score
-            var intentMatchScore = GenerateIntentMatchingScore(MSSFDecodeResult.otherIntents, MSSFDecodeResult.majorIntent, matchData, queryTermDict);//@Frank generate intent feature score
-LogDebug(" intentMatchScoreBegin", intentMatchScore, 'intentMatchScoreEnd', '\r\n');
+LogDebug("-0->", MSSFDecodeResult.majorIntent.type, MSSFDecodeResult.majorIntent.span, "<-0-\r\n");
+			var intentMatchScore = GenerateIntentMatchingScore(MSSFDecodeResult.otherIntents, MSSFDecodeResult.majorIntent, matchData, queryTermDict);//@Frank generate intent feature score
+LogDebug("-1->", intentMatchScore, '<-1-', '\r\n');
 			keyFeaturesOfDocuments.push(new KeyFeatures(entityMatchScore, intentMatchScore, authorityScore, specificSiteScore, 0, 0, topSiteScoreResult, rankScoreVector[i].drScoreRank, 0, isSiteConsMatchDomain));//@Frank add intentMatchScore && constraintMatchScore
 			// KeyFeatures(entityMatchScore, intentMatchScore, authorityScore, specificSiteScore, guardingScore, lowQualitySiteScore, topSiteScoreResult, drScoreRank, constraintMatchScore, isSiteConsMatchDomain)
 //LogDebug("keyFeaturesOfDocuments entityScore", i-1,  keyFeaturesOfDocuments[i-1].isSiteConsMatchDomain, '\r\n');
