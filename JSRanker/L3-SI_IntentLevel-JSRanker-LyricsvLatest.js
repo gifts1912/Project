@@ -149,7 +149,7 @@ else {
 
 //------------------------------------------------ MSSemanticFrame Decoder - Begin ------------------------------------------------
 function MSSFDecode(addQuery) { 
-//LogDebug("addQuery", addQuery, "\r\n");
+//LogDebug("MSSFDecodeBegin", "\r\n");
     var entity = [];
     var otherIntents = [];
     var majorIntent;
@@ -319,12 +319,14 @@ function MSSFDecode(addQuery) {
             }
         }
     }
-    return new MSSFDecodeResult(entity, majorIntents, otherIntents, constraint, urlKeyword, guardingkeyword, officialSite, siteConstraint, otherSlots);
+//LogDebug("majorIntent", majorIntent.span, majorIntent.type, '\r\n');
+//LogDebug("MSSFDecodeEnd", "\r\n");
+    return new MSSFDecodeResult(entity, majorIntent, otherIntents, constraint, urlKeyword, guardingkeyword, officialSite, siteConstraint, otherSlots);
 }
 
-function MSSFDecodeResult(entity, majorIntents, otherIntents, constraint, urlKeyword, guardingkeyword, officialSite, siteConstraint, otherSlots) {
+function MSSFDecodeResult(entity, majorIntent, otherIntents, constraint, urlKeyword, guardingkeyword, officialSite, siteConstraint, otherSlots) {
     this.entity = entity;
-    this.majorIntents = majorIntents;
+    this.majorIntent = majorIntent;
     this.otherIntents = otherIntents;
     this.constraint = constraint;
     this.urlKeyword = urlKeyword;
@@ -790,6 +792,9 @@ LogDebug("-6->", score, "<-6-");
 
 function TermMatchWordsFound(entity, queryTermDict, url, title, snippet， wordFoundTitleArray, wordFoundBodyArray) {
 	var matchTermArray = [0, 0, 0];//url, title, snippet match count
+	if(IsNull(entity)) {
+		return matchTermArray;
+	}
 	var entityTerms = entity.split(' ');
 	var len = entityTerms.length;
 	for(var i = 0; i < len; i++) {
@@ -857,13 +862,14 @@ function TermArrayMatchingExactPhrase(keyWords, url, titile, snippet){
 }
 
 function GenerateIntentMatchingScore(majorIntent, otherIntents, matchData, queryTermDict, wordFoundTitleArray, wordFoundBodyArray){
-	
+LogDebug("GenerateIntentMatchingScore_SpecifiedIntent(majorIntent, matchData, queryTermDict)Begin", '\r\n');
 	var majorIntentMatch = GenerateIntentMatchingScore_SpecifiedIntent(majorIntent, matchData, queryTermDict);
 	
 	var otherIntentMatch = 0.0;
-	var len = intentOther.length;
+	var len = otherIntents.length;
 	for(var i = 0; i < len; i++) {
 		var intent = otherIntents[i];
+LogDebug("GenerateIntentMatchingScore_SpecifiedIntent(intent, matchData, queryTermDict)Begin", '\r\n');
 		otherIntentMatch += GenerateIntentMatchingScore_SpecifiedIntent(intent, matchData, queryTermDict);
 	}
 	if (len != 0) {
@@ -871,6 +877,7 @@ function GenerateIntentMatchingScore(majorIntent, otherIntents, matchData, query
 	}
 	var score = 0.7 * majorIntentMatch + 0.3 * otherIntentMatch;
 	score = NormalizeIntentMatchingScore(score);
+LogDebug("NormalizeIntentMatchingScore(score)End", '\r\n');
 	return score;
 }
 
@@ -882,11 +889,13 @@ function GenerateIntentMatchingScore_SpecifiedIntent(intent, matchData, queryTer
 	var type = intent.type;
     var score = 0;
 	var matchTermArray = new Array(3);
+LogDebug("TermMatchWordsFound(span, queryTermDict, url, title, snippet, matchData.wordFoundTitleArray, matchData.wordFoundBodyArray)Begin", '\r\n');
 	matchTermArray = TermMatchWordsFound(span, queryTermDict, url, title, snippet, matchData.wordFoundTitleArray, matchData.wordFoundBodyArray);
 	
 	var matchAliasArray = new Array(3);
 	if (type in intentKeyWords) {
 		var keyWords = intentKeyWords[type];
+LogDebug("TermArrayMatchingExactPhrase(keyWords, url, titile, snippet)Begin", '\r\n');
 		matchAliasArray = TermArrayMatchingExactPhrase(keyWords, url, titile, snippet);
 	}
 	
