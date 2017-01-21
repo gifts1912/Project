@@ -826,7 +826,7 @@ LogDebug("-6->", score, "<-6-");
     return score;
 }
 
-function TermMatchWordsFound(entity, queryTermDict, url, title, snippet， wordFoundTitleArray, wordFoundBodyArray) {
+function TermMatchWordsFound(entity, queryTermDict, url, title, snippet, wordFoundTitleArray, wordFoundBodyArray) {
 	var matchTermArray = [0, 0, 0];//url, title, snippet match count
 	if(IsNull(entity)) {
 		return matchTermArray;
@@ -926,6 +926,9 @@ LogDebug("-2->", score, "<-2-", '\r\n');
 }
 
 function GenerateIntentMatchingScore_SpecifiedIntent(intent, matchData, queryTermDict){ //intentMajor correspond to clusterId, intentOther is the int_tag come from m:Tags; 
+	if(IsNull(intent)){
+		return 0.0;
+	}
     var url = matchData.url;
     var title = matchData.title;
     var snippet = matchData.snippet;
@@ -1614,11 +1617,11 @@ function GenerateGuardingScore(GuardingUrlScore, guardingkeyword, matchData, int
     //****how to compute the guardingScore based on the flowing conditions*******************
     /*
        • Will keep the document’s original position if it meet all the following conditions at the same time:
-       ○ At least one document in Top5 IntentMatching > 0; // intentMatchInTop5
-       ○ EntityMatching > threshold;
-       ○ IntentMatching == 0;
-       ○ GuardingScore == 1000 or SiteConstraintMatchDomain == 1000;
-       ○ LowQualitySiteScore == 0 and No opposed constraint match.
+       ? At least one document in Top5 IntentMatching > 0; // intentMatchInTop5
+       ? EntityMatching > threshold;
+       ? IntentMatching == 0;
+       ? GuardingScore == 1000 or SiteConstraintMatchDomain == 1000;
+       ? LowQualitySiteScore == 0 and No opposed constraint match.
        */
     if (GuardingUrlScore == 100 || IsArrayPhraseMatchForTitleSnippet(guardingkeyword, matchData.title)) {
         return c_guardingScore;
@@ -2508,4 +2511,3 @@ function SortNumberDRScoreDesc(a, b) {
     return b.drScore - a.drScore;
 }
 //------------------------------------------------ Utilities - End ------------------------------------------------
-
