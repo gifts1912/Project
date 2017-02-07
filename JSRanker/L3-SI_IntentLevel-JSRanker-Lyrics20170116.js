@@ -8,26 +8,6 @@
 // 5:UrlDepth
 // 6:OnlineMemoryUrlFeature_0
 // 7:NumberOfPerfectMatch_BingClick
-// 8:NumberOfOccurrences_MultiInstanceTitle_0
-// 9:NumberOfOccurrences_MultiInstanceTitle_1
-// 10:NumberOfOccurrences_MultiInstanceTitle_2
-// 11:NumberOfOccurrences_MultiInstanceTitle_3
-// 12:NumberOfOccurrences_MultiInstanceTitle_4
-// 13:NumberOfOccurrences_MultiInstanceTitle_5
-// 14:NumberOfOccurrences_MultiInstanceTitle_6
-// 15:NumberOfOccurrences_MultiInstanceTitle_7
-// 16:NumberOfOccurrences_MultiInstanceTitle_8
-// 17:NumberOfOccurrences_MultiInstanceTitle_9
-// 18:NumberOfOccurrences_Body_0
-// 19:NumberOfOccurrences_Body_1
-// 20:NumberOfOccurrences_Body_2
-// 21:NumberOfOccurrences_Body_3
-// 22:NumberOfOccurrences_Body_4
-// 23:NumberOfOccurrences_Body_5
-// 24:NumberOfOccurrences_Body_6
-// 25:NumberOfOccurrences_Body_7
-// 26:NumberOfOccurrences_Body_8
-// 27:NumberOfOccurrences_Body_9
 
 //------------------------------------------------ DrugSideEffects Config - Begin ------------------------------------------------
 var c_SubIntentId_LyricsSongLyrics = 201;
@@ -35,12 +15,12 @@ var c_SubIntentId_LyricsSongLyricsArtist = 202;
 
 
 var intentMatchCondition = [];
-intentMatchCondition[c_SubIntentId_LyricsSongLyrics] = [0, 2, 0]; 
-intentMatchCondition[c_SubIntentId_LyricsSongLyricsArtist] = [0, 2, 0]; 
+intentMatchCondition[c_SubIntentId_LyricsSongLyrics] = [0, 2, 0]; //what's this represent?
+intentMatchCondition[c_SubIntentId_LyricsSongLyricsArtist] = [0, 2, 0]; //what's this represent?
 
 
 var constraintMatchCondition = [];
-constraintMatchCondition[c_SubIntentId_LyricsSongLyrics] = [0, 1, 1, 1, 1]; 
+constraintMatchCondition[c_SubIntentId_LyricsSongLyrics] = [0, 1, 1, 1, 1]; // 
 constraintMatchCondition[c_SubIntentId_LyricsSongLyricsArtist] = [0, 1, 1, 1, 1];
 
 //------------------------------------------------ DrugSideEffects Config - End ------------------------------------------------
@@ -90,10 +70,6 @@ var c_maxCaptionCharLength = 512;
 var c_officialSiteDPThres = 5;
 var c_entityMatchScoreThres_LB = 5000;//250;
 
-var startIndexTitle = 8; // represent the startIndex in rerankFeatures of NumberOfOccurrences_Title_[0-9]
-var startIndexBody = 18; //represent the startIndex in rerankFeatures of NumberOfOccurrences_Body_[0-9]
-
-
 // Stopwords used in PostWeb Slot Tagging
 var c_stopWordsList = new Array("about", "an", "and", "are", "as", "at", "be", "but", "by", "com", "for", "from", "how", "if", "in", "is", "it", "of", "on", "or", "that", "the", "this", "to", "was", "what", "when", "where", "which", "who", "will", "with", "would", "www", "a", "i", "your", "s");
 
@@ -131,18 +107,14 @@ else {
     var query = extractedquery; 
 //LogDebug("108", query, '\r\n');
     var MSSFDecodeResult = MSSFDecode(msSemanticFrame);
-//LogDebug("-0->", rawquery, "<-0-");
 //LogDebug("MSSFDecode finished", '\r\n');
-LogDebug("query", query, '\r\n');
     var wordDropQuery = query.replace(/word:\((\w+)[^\)]+\)/g, "$1").replace(/rankonly:/g, "");
-LogDebug("wordDropQuery", wordDropQuery, "\r\n");
+//LogDebug("wordDropQuery", wordDropQuery, "\r\n");
     var queryTermArray = wordDropQuery.split(" ");
-   // var queryTermArray = rawquery.split(" ");
     var queryTermDict = {};
     for (var i = 0, len = queryTermArray.length; i < len; i++) {
         var term = queryTermArray[i];
         if (IsNull(queryTermDict[term])) {
-LogDebug("queryTermDic", term, i, '\r\n')
             queryTermDict[term] = i;
         }
     }
@@ -160,36 +132,27 @@ LogDebug("queryTermDic", term, i, '\r\n')
         title = IsNull(title) ? "" : StreamNormalization(title); //only get the character and digital, other char changed into space
         url = IsNull(url) ? "" : url.toLowerCase().substring(0, c_maxCaptionCharLength);
         snippet = IsNull(snippet) ? "" : StreamNormalization(snippet);
-		var rerankFeatures = curDoc.rerankfeatures;
-        var wordFoundTitleArray = ParseWordFoundArray(startIndexTitle, rerankFeatures); //ParseWordCandidatePresence(marketVector[c_MarkerId_WordCandidatePresence_MultiInstanceTitle]);//decode the L2 features: NumberOfOccurrences_MultiInstanceTitle_0, ... , NumberOfOccurrences_MultiInstanceTitle_7
-        var wordFoundBodyArray = ParseWordFoundArray(startIndexBody, rerankFeatures); //ParseWordCandidatePresence(marketVector[c_MarkerId_WordCandidatePresence_Body]);//decode the L2 features: NumberOfOccurrences_Body_0,..., NumberOfOccurrences_Body_7
+
+        var wordFoundTitleArray = ParseWordCandidatePresence(marketVector[c_MarkerId_WordCandidatePresence_MultiInstanceTitle]);//decode the L2 features: NumberOfOccurrences_MultiInstanceTitle_0, ... , NumberOfOccurrences_MultiInstanceTitle_7
+
+//LogDebug("marketVector Begin", marketVector, "marketVector End");
+//LogDebug(wordFoundTitleArray, "wordFoundTitileArray\r\n");
+
+        var wordFoundBodyArray = ParseWordCandidatePresence(marketVector[c_MarkerId_WordCandidatePresence_Body]);//decode the L2 features: NumberOfOccurrences_Body_0,..., NumberOfOccurrences_Body_7
+//LogDebug(wordFoundBodyArray, "wordFoundBodyArray\r\n");
         var matchData = new MatchData(title, url, snippet, wordFoundTitleArray, wordFoundBodyArray);
         matchDataArray.push(matchData);
     }
-    MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArray, intentMatchCondition[c_SubIntentId_LyricsSongLyrics ], constraintMatchCondition[c_SubIntentId_LyricsSongLyrics], documents, documentCount, queryTermDict);
+    MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArray, intentMatchCondition[c_SubIntentId_LyricsSongLyrics ], constraintMatchCondition[c_SubIntentId_LyricsSongLyrics], documents, documentCount);
 
 }
-
-//------------------------------------------------ Parse NumberOfOccurrences_Title - Begin -----------------------------------------
-function ParseWordFoundArray(startIndex, rerankFeatures){
-	var wordOccurArray = new Array(10);
-	for (var i = 0; i < 10; i++){
-		var value = rerankFeatures[i + startIndex];
-		if(IsNull(value)) {
-			value = 0;
-		}
-		wordOccurArray[i] = value;
-	}
-	return wordOccurArray;
-}
-//------------------------------------------------ Parse NumberOfOccurrences_Title - End -----------------------------------------
 
 //------------------------------------------------ MSSemanticFrame Decoder - Begin ------------------------------------------------
 function MSSFDecode(addQuery) { 
-//LogDebug("MSSFDecodeBegin", "\r\n");
+//LogDebug("addQuery", addQuery, "\r\n");
     var entity = [];
     var otherIntents = [];
-    var majorIntent;
+    var majorIntents = [];
     var constraint = [];
     var urlKeyword = new UrlKeywordClass([], [], []);
     var guardingkeyword = [];
@@ -246,7 +209,7 @@ function MSSFDecode(addQuery) {
                 continue;
            }
             var majorType = clusterIdToIntentType[clusterId]; // global variable clusterIdToIntentType; 
-//LogDebug("-4->", majorType, "<-4-\r\n");
+//LogDebug("MSSFDecode key==intity", majorType, "majorType\r\n");
             var intentTypeSpans = {};
             var intentTypeSpansArr = value.split("^");
             for (var k = 0, len = intentTypeSpansArr.length; k < len; k++){
@@ -261,7 +224,6 @@ function MSSFDecode(addQuery) {
 //LogDebug("MSSFDecode key==intity", intentType, "intentType\r\n");
 //LogDebug("MSSFDecode key==intity", majorType, "majorType\r\n");
                 if (intentType == majorType) {
-					/*
                     if (majorType in intentKeyWords) {
                         majorIntents = intentKeyWords[majorType]; // global variable intentKeyWords; get the intent key words of majorIntent;
 //LogDebug(majorIntents, "majorIntents\r\n");
@@ -274,12 +236,10 @@ function MSSFDecode(addQuery) {
                         if(majorIntents.indexOf(spanEle) == -1) {
                             majorIntents.push(spanEle);
                         }
-                    }*/
-					majorIntent = new IntentClass(intentType, span);
-//LogDebug("majorIntentsBegin", majorIntent.type, majorIntent.span, "majorIntentsListEnd\r\n");
+                    }
+//LogDebug("majorIntentsBegin", majorIntents, "majorIntentsListEnd\r\n");
                 }
                 else {
-					/*
                     if (intentType in intentKeyWords) {
                         otherIntents = intentKeyWords[intentType]; // global variable intentKeyWords; get the intent key words of majorIntent;
 //LogDebug(otherIntents, "otherIntentsListIn\r\n");
@@ -294,8 +254,7 @@ function MSSFDecode(addQuery) {
                         if(otherIntents.indexOf(spanEle) == -1) {
                             otherIntents.push(spanEle);
                         }
-                    }*/
-					otherIntents.push(new IntentClass(intentType, span));
+                    }
 //LogDebug("otherIntentsListBegin", otherIntents, "otherIntentsList\r\n");
                 }
             }
@@ -356,14 +315,12 @@ function MSSFDecode(addQuery) {
             }
         }
     }
-//LogDebug("majorIntent", majorIntent.span, majorIntent.type, '\r\n');
-//LogDebug("MSSFDecodeEnd", "\r\n");
-    return new MSSFDecodeResult(entity, majorIntent, otherIntents, constraint, urlKeyword, guardingkeyword, officialSite, siteConstraint, otherSlots);
+    return new MSSFDecodeResult(entity, majorIntents, otherIntents, constraint, urlKeyword, guardingkeyword, officialSite, siteConstraint, otherSlots);
 }
 
-function MSSFDecodeResult(entity, majorIntent, otherIntents, constraint, urlKeyword, guardingkeyword, officialSite, siteConstraint, otherSlots) {
+function MSSFDecodeResult(entity, majorIntents, otherIntents, constraint, urlKeyword, guardingkeyword, officialSite, siteConstraint, otherSlots) {
     this.entity = entity;
-    this.majorIntent = majorIntent;
+    this.majorIntents = majorIntents;
     this.otherIntents = otherIntents;
     this.constraint = constraint;
     this.urlKeyword = urlKeyword;
@@ -523,7 +480,7 @@ function PETopSiteScoreDecode(PETopSiteScore, urlKeyword, url, urlPathDepth) {
     var keyword2 = urlKeyword.keyword2;
     var keyword3 = urlKeyword.keyword3;
 
-    scoreTemp = scoreTemp >>> 9;
+    scoreTemp = scoreTemp >>> 6;
     if (scoreTemp > 0) {
         var extendSection1 = PETopSiteScoreExtendSectionDecode(scoreTemp);
         var isExtend1 = true;
@@ -543,7 +500,7 @@ function PETopSiteScoreDecode(PETopSiteScore, urlKeyword, url, urlPathDepth) {
             result = new PETopSiteScoreDecodeResult(extendSection1.score, extendSection1.isSpecific, extendSection1.isIntent);
         }
         else {
-            scoreTemp = scoreTemp >>> 9;
+            scoreTemp = scoreTemp >>> 12;
             if (scoreTemp > 0) {
                 var extendSection2 = PETopSiteScoreExtendSectionDecode(scoreTemp);
                 var isExtend2 = true;
@@ -576,16 +533,15 @@ function PETopSiteScoreBasicSectionDecode(score) {
     var isIntentBasic = scoreTemp & 1;
 
     scoreTemp = scoreTemp >>> 1;
-//LogDebug("580scoreTemp", scoreTemp, '\r\n');
-    var scoreBasic = scoreTemp & 127;
-//LogDebug("score", score,isSpecificBasic, isIntentBasic, scoreBasic, '\r\n');
+    var scoreBasic = scoreTemp & 15;
+
     return new PETopSiteScoreBasicSection(scoreBasic, isSpecificBasic, isIntentBasic);
 }
 
 function PETopSiteScoreExtendSectionDecode(score) {
     var scoreTemp = score;
     var PETopSiteScoreBasicSectionTemp = PETopSiteScoreBasicSectionDecode(scoreTemp);
-    scoreTemp = scoreTemp >>> 9;
+    scoreTemp = scoreTemp >>> 6;
     var pathDepth = scoreTemp & 7;
 
     scoreTemp = scoreTemp >>> 3;
@@ -794,167 +750,33 @@ function NormalizeIntentMatchingScore(score){
 //------------------------------------------------ Normalize Intent Matching Score - End ------------------------------------------------
 
 //------------------------------------------------ Generate Entity Matching Feature - End ------------------------------------------------
-function GenerateIntentMatchingScore_v02(intentOther, intentMajor, matchData){ //intentMajor correspond to clusterId, intentOther is the int_tag come from m:Tags
+function GenerateIntentMatchingScore(intentOther, intentMajor, matchData){ //intentMajor correspond to clusterId, intentOther is the int_tag come from m:Tags
 
     var url = matchData.url;
     var title = matchData.title;
     var snippet = matchData.snippet;
     var score = 0;
+//LogDebug("GenerateIntentMatchingScore", url, intentMajor, '\r\n');
     if(IsArrayPhraseMatchForUrl(intentMajor, url) || IsArrayPhraseMatchForTitleSnippet(intentMajor, title)){
-LogDebug("-2->", intentMajor, "<-2-");
 //		LogDebug("GenerateIntentMatchingScore","matchUrlOrTitile", intentMajor, '\r\n');
         score += 0.7 * 4000.0;
     }
     else if(IsArrayPhraseMatchForTitleSnippet(intentMajor, snippet)){
-LogDebug("-3->", intentMajor, "<-3-");
         score += 0.7 * 2000.0;
 //		LogDebug("GenerateIntentMatchingScore","intentMajorMatchSnippet", intentMajor, '\r\n');
     }
 
     if(IsArrayPhraseMatchForUrl(intentOther, url) || IsArrayPhraseMatchForTitleSnippet(intentOther, title) ){
-LogDebug("-4->", intentOther, "<-4-");
 //		LogDebug("GenerateIntentMatchingScore","intentOtherMatchUrlOrTitile", intentOther, '\r\n');
         score += 0.3 * 4000.0;
     }
     else if(IsArrayPhraseMatchForTitleSnippet(intentOther, snippet)){
-LogDebug("-5->", intentOther, "<-5-");
 //		LogDebug("GenerateIntentMatchingScore","intentOtherMatchSnippet", intentOther, '\r\n');
         score += 0.3 * 2000.0;
     }
-LogDebug("-6->", score, "<-6-");
     score = NormalizeIntentMatchingScore(score);
 //LogDebug("GenerateIntentMatchingScore", score, '\r\n');
     return score;
-}
-
-function TermMatchWordsFound(entity, queryTermDict, url, title, snippet, wordFoundTitleArray, wordFoundBodyArray) {
-	var matchTermArray = [0, 0, 0];//url, title, snippet match count
-	if(IsNull(entity)) {
-		return matchTermArray;
-	}
-LogDebug("-6->", entity, "<-6-");
-	var entityTerms = entity.toString().split(" ");
-	var len = entityTerms.length;
-	for(var i = 0; i < len; i++) {
-		var isTermUrlMatch = 0;
-		var isTermTitleMatch = 0;
-		var isTermSnippetMatch = 0;
-		var entityTerm = entityTerms[i];
-LogDebug("-8->", entityTerm, "<-8-");
-		if(IsPhraseMatchForUrl(entityTerm, url)) {
-			isTermUrlMatch = 1;
-		}
-		if(IsPhraseMatchForUrl(entityTerm, title)){
-			isTermTitleMatch = 1;
-		}
-		if(IsPhraseMatchForUrl(entityTerm, snippet)) {
-			isTermSnippetMatch = 1;
-		}
-LogDebug("-7->", isTermUrlMatch, isTermTitleMatch, isTermSnippetMatch, "<-7-");
-
-		if(entityTerm in queryTermDict) {
-			var index = queryTermDict[entityTerm];
-			if(index < 10){
-				if(wordFoundTitleArray[index] > 0) {
-					isTermTitleMatch = 1;
-				}
-				if(wordFoundBodyArray[index] > 0) {
-					isTermSnippetMatch = 1;
-				}
-			}
-		}
-LogDebug("-9->", index, isTermUrlMatch, isTermTitleMatch, isTermSnippetMatch, "<-9-");
-		if(isTermUrlMatch == 1) {
-			matchTermArray[0] += 1;
-		}
-		if(isTermTitleMatch == 1) {
-			matchTermArray[1] += 1;
-		}
-		if(isTermSnippetMatch == 1) {
-			matchTermArray[2] += 1;
-		}
-	}
-	if (len != 0) {
-		matchTermArray[0] = matchTermArray[0] * 1000.0 / len;
-		matchTermArray[1] = matchTermArray[1] * 1000.0 / len;
-		matchTermArray[2] = matchTermArray[2] * 1000.0 / len;
-	}
-//LogDebug("-10->", matchTermArray, "<-10-", '\r\n');
-	return matchTermArray;
-}
-function TermArrayMatchingExactPhrase(keyWords, url, title, snippet){
-	var matchTermArray = [0, 0, 0];
-	var len = keyWords.length;
-	var score = 0.0;
-	if (len == 0){
-		return matchTermArray;
-	}
-	for(var i = 0; i < len; i++) {
-		var word = keyWords[i];
-		if(matchTermArray[0] == 0 && IsPhraseMatchForUrl(word, url)){
-			matchTermArray[0] = 1000;
-		}
-		else if(matchTermArray[1] == 0 && IsPhraseMatchForTitleSnippet(word, title)){
-			matchTermArray[1] = 1000;
-		}
-		else if(matchTermArray[2] == 0 && IsPhraseMatchForTitleSnippet(word, snippet)){
-			matchTermArray[2] = 1000.0;
-		}
-    }
-	return matchTermArray;
-}
-
-function GenerateIntentMatchingScore(otherIntents, majorIntent, matchData, queryTermDict, wordFoundTitleArray, wordFoundBodyArray){
-
-//LogDebug("-2->", majorIntent.span, "<-2-", '\r\n');
-	var majorIntentMatch = GenerateIntentMatchingScore_SpecifiedIntent(majorIntent, matchData, queryTermDict);
-LogDebug("-3->", majorIntentMatch, "<-3-", '\r\n');
-	var otherIntentMatch = 0.0;
-	var len = otherIntents.length;
-	for(var i = 0; i < len; i++) {
-		var intent = otherIntents[i];
-//LogDebug("GenerateIntentMatchingScore_SpecifiedIntent(intent, matchData, queryTermDict)Begin", '\r\n');
-		otherIntentMatch += GenerateIntentMatchingScore_SpecifiedIntent(intent, matchData, queryTermDict);
-	}
-	if (len != 0) {
-		otherIntentMatch = otherIntentMatch / len;
-	}
-	var score = 0.7 * majorIntentMatch + 0.3 * otherIntentMatch;
-LogDebug("-2->", score, "<-2-", '\r\n');
-	score = NormalizeIntentMatchingScore(score);
-//LogDebug("NormalizeIntentMatchingScore(score)End", '\r\n');
-	return score;
-}
-
-function GenerateIntentMatchingScore_SpecifiedIntent(intent, matchData, queryTermDict){ //intentMajor correspond to clusterId, intentOther is the int_tag come from m:Tags; 
-	if(IsNull(intent)){
-		return 0.0;
-	}
-    var url = matchData.url;
-    var title = matchData.title;
-    var snippet = matchData.snippet;
-	var span = intent.span; 
-	var type = intent.type;
-    var score = 0;
-	var matchTermArray = new Array(3);
-	matchTermArray = TermMatchWordsFound(span, queryTermDict, url, title, snippet, matchData.wordFoundTitleArray, matchData.wordFoundBodyArray);
-LogDebug("-5->", matchTermArray, "<-5-", '\r\n');
-	var matchAliasArray = new Array(3);
-	if (type in intentKeyWords) {
-		var keyWords = intentKeyWords[type];
-		matchAliasArray = TermArrayMatchingExactPhrase(keyWords, url, title, snippet);
-//LogDebug("-12->", matchAliasArray, "<-12-");
-	}
-LogDebug("-6->", matchAliasArray, "<-6-", '\r\n');
-	if(matchTermArray[0] == 1000 || matchAliasArray[0] == 1000 || matchTermArray[1] == 1000 || matchAliasArray[1] == 1000) {
-		return 4000.0;
-	}
-	else if(matchTermArray[2] == 1000 || matchAliasArray[2] == 1000) {
-		return 2000.0;
-	}
-	else {
-		return 0.0;
-	}
 }
 //------------------------------------------------ Generate Intent Matching Feature - Begin ------------------------------------------------
 
@@ -1618,11 +1440,11 @@ function GenerateGuardingScore(GuardingUrlScore, guardingkeyword, matchData, int
     //****how to compute the guardingScore based on the flowing conditions*******************
     /*
        • Will keep the document’s original position if it meet all the following conditions at the same time:
-       ? At least one document in Top5 IntentMatching > 0; // intentMatchInTop5
-       ? EntityMatching > threshold;
-       ? IntentMatching == 0;
-       ? GuardingScore == 1000 or SiteConstraintMatchDomain == 1000;
-       ? LowQualitySiteScore == 0 and No opposed constraint match.
+       ○ At least one document in Top5 IntentMatching > 0; // intentMatchInTop5
+       ○ EntityMatching > threshold;
+       ○ IntentMatching == 0;
+       ○ GuardingScore == 1000 or SiteConstraintMatchDomain == 1000;
+       ○ LowQualitySiteScore == 0 and No opposed constraint match.
        */
     if (GuardingUrlScore == 100 || IsArrayPhraseMatchForTitleSnippet(guardingkeyword, matchData.title)) {
         return c_guardingScore;
@@ -1735,7 +1557,7 @@ function GenerateThresholdScore(subIntentId, subIntentScore, MSSFDecodeResult, m
 		if(isNaN(numberOfPerfectMatch_BingClick_i)) {
 			numberOfPerfectMatch_BingClick_i = 0.0;
 		}
-LogDebug("Threshold", numberOfPerfectMatch_BingClick_i, onlineMemoryUrlFeature_i, "\r\n");
+//LogDebug("Threshold", numberOfPerfectMatch_BingClick_i, onlineMemoryUrlFeature_i, "\r\n");
 //LogDebug("1.1\t-->", i, numberOfPerfectMatch_BingClick_i, onlineMemoryUrlFeature_i, "<--");
         //Generate entity/intent/cons match score
         var entityMatchScore = keyFeaturesOfDocuments[i].entityMatchScore;
@@ -1755,8 +1577,7 @@ LogDebug("Threshold", numberOfPerfectMatch_BingClick_i, onlineMemoryUrlFeature_i
         drEntityScoreArray[i] = entityMatchScore;
         drIntentScoreArray[i] = intentMatchScore;
     }
-LogDebug("EntityThreshold", drEntityScoreArray, '\r\n');
-LogDebug("IntentThreshold", drIntentScoreArray, "\r\n");
+//LogDebug(drEntityScoreArray, drIntentScoreArray, "\r\n");
     // Generate entity/intent/constrain threshold of FastBrain/BingClick 
     
 	if(sum_thresholdBingClick != 0) {
@@ -1790,7 +1611,7 @@ LogDebug("IntentThreshold", drIntentScoreArray, "\r\n");
     }
     threshold_top_entity = threshold_top_entity / 5.0;
     threshold_top_intent = threshold_top_intent / 5.0;
-LogDebug("\t3-->generateEntityThresholdScore", threshold_top_entity, "<--\t");
+//LogDebug("\t3-->generateEntityThresholdScore", threshold_top_entity, "<--\t");
     //Generate final threshold of entity/intent/constraint
     var threshold_final_entity = GenerateNumNoZero(threshold_top_entity, weightScore_thresholdBingClick_entity, weightScore_fastBrain_entity);
     var threshold_final_intent = GenerateNumNoZero(threshold_top_intent, weightScore_thresholdBingClick_intent, weightScore_fastBrain_intent);
@@ -1799,7 +1620,7 @@ LogDebug("\t3-->generateEntityThresholdScore", threshold_top_entity, "<--\t");
     threshold_final[0] = threshold_final_entity;
     //threshold_final[1] = threshold_final_intent;
     threshold_final[1] = threshold_top_intent;
-LogDebug("res", threshold_final, '\r\n');
+//LogDebug("res", threshold_final, '\r\n');
     return threshold_final;
 }
 
@@ -1823,11 +1644,9 @@ function GenerateDRScoreRank(curDRScore, l3Threshold, l2Threshold, l1Threshold) 
 }
 
 function RankerCondition1(top20doc,keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, top1EntityMatch,drScoreTop1EntityMatch, top1IntentMatch, drScoreTop1IntentMatch, constraintMatchCondition, MSSFDecodeResult, matchDataArray, rerankFeatures ){
-LogDebug("RankerCondition1->0", entityMatchThreshold, top1EntityMatch, entityMatchThreshold, drScoreTop1EntityMatch, entityMatchThreshold, top1IntentMatch, intentMatchThreshold, drScoreTop1IntentMatch, intentMatchThreshold, '\r\n');
     if(!((entityMatchThreshold > 250) && (top1EntityMatch >= entityMatchThreshold) && (drScoreTop1EntityMatch >= entityMatchThreshold) && (top1IntentMatch >= intentMatchThreshold) && (drScoreTop1IntentMatch >= intentMatchThreshold))) {
         return false;
     }
-LogDebug("RankerCondition1->1", '\r\n');
     var top5EntityIntentASCount = 0;
     var top8EntityIntentASCount = 0;
     var top5IntentMatchSum = 0;
@@ -1836,27 +1655,21 @@ LogDebug("RankerCondition1->1", '\r\n');
         var curEntityScore = keyFeaturesOfDocuments[i].entityMatchScore;
         var curIntentScore = keyFeaturesOfDocuments[i].intentMatchScore;
         var curAuthorityScore = keyFeaturesOfDocuments[i].authorityScore;
-LogDebug("RankerCondition1->1.5", i, curEntityScore, entityMatchThreshold, curIntentScore, intentMatchThreshold, curAuthorityScore, '\r\n');
-        if ((i < 5) && (curEntityScore >= entityMatchThreshold) && (curIntentScore >= intentMatchThreshold) && (curAuthorityScore >= 0)) {
+        if ((i < 5) && (curEntityScore >= entityMatchThreshold) && (curIntentScore >= intentMatchThreshold) && (curAuthorityScore > 0)) {
             top5EntityIntentASCount++;
             top8EntityIntentASCount++;
             top5IntentMatchSum += curIntentScore;
         }
-        if ((i >= 5 && i < 8) && (curEntityScore >= entityMatchThreshold) && (curIntentScore >= intentMatchThreshold) && (curAuthorityScore >= 0)) {
+        if ((i >= 5 && i < 8) && (curEntityScore >= entityMatchThreshold) && (curIntentScore >= intentMatchThreshold) && (curAuthorityScore > 0)) {
             top8EntityIntentASCount++;
         }
     }
-LogDebug("RankerCondition1->2", '\r\n');
-LogDebug("RankerCondition1->2.5", top5EntityIntentASCount, top8EntityIntentASCount, "\r\n"); 
     if(!(top5EntityIntentASCount >= 2 || top8EntityIntentASCount >= 4)) {
         return false;
     }
-
-LogDebug("RankerCondition1->3", '\r\n');
     if(top5IntentMatchSum !== 0) {
         return true;
     }
-LogDebug("RankerCondition1->4", '\r\n');
     var top5ConstraintMatchSum = 0, matchData, url, authorityScore, constraintMatchUrlScore, constraintMatchScore;
     for (i = 0; i < Math.min(top20doc, 5); ++i) {
         matchData = matchDataArray[i];
@@ -1948,7 +1761,7 @@ function RankerCondition2(drScoreThreshold, documentPosition, curKeyFeatures, cu
 }
 
 
-function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArray, intentMatchCondition, constraintMatchCondition, documentsLocal, documentCount, queryTermDict) {
+function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArray, intentMatchCondition, constraintMatchCondition, documentsLocal, documentCount) {
     //---------------   step1 DRScoreRank Begin ----------------------------
     var docCount = documentCount;
     var top20doc = Math.min(docCount, 20);
@@ -2016,26 +1829,28 @@ for(var j = 0; j < top20doc; j++) {
 		matchData = matchDataArray[i];
         featureVector = curDoc.rerankfeatures;
         url = matchData.url;
-LogDebug("\turlBegin:", url, 'urlEnd\t');
+LogDebug(" urlBegin:", url, 'urlEnd ');
         if (i == 0){
+
+/*for(var x = 0; x < MSSFDecodeResult.entity.length; x++) {
+	LogDebug("entity", x, MSSFDecodeResult.entity[x].text, '\r\n');
+}*/
             var entityMatchScore = GenerateEntityMatchingScore(MSSFDecodeResult.entity, matchData);//feature:entity, matchData Contain the feature "NumberOfOccurrences_MultiInstanceTitle_0, ... , NumberOfOccurrences_MultiInstanceTitle_7"
-//LogDebug(" entityMatchScoreBegin", entityMatchScore, 'entityMatchScoreEnd', '\r\n');
+LogDebug(" entityMatchScoreBegin", entityMatchScore, 'entityMatchScoreEnd', '\r\n');
             topSiteScoreResult = PETopSiteScoreDecode(featureVector[c_FeatureId_PEScoreTopSite], MSSFDecodeResult.urlKeyword, url, featureVector[c_FeatureId_UrlDepth]);
-//LogDebug("peScoreTopSite", featureVector[0], '\r\n');
-LogDebug("authorityScore", topSiteScoreResult.authorityScore, "\r\n");
             authorityIsSiteConsMatchScore = GenerateAuthorityScore(topSiteScoreResult.authorityScore, MSSFDecodeResult.entity, MSSFDecodeResult.siteConstraint, url, curDoc.hostid, curDoc.domainid, MSSFDecodeResult.officialSite, i);
             isSiteConsMatchDomain = authorityIsSiteConsMatchScore[1];
             var authorityScore = authorityIsSiteConsMatchScore[0];
-LogDebug("-0->", authorityScore, "<-0-", '\r\n');
-//LogDebug(" authorityScoreBegin", authorityScore, 'authorityScoreEnd', '\r\n');
+LogDebug(" authorityScoreBegin", authorityScore, 'authorityScoreEnd', '\r\n');
             specificSiteScore = topSiteScoreResult.isSpecific;
             //var intentMatchScore = GenerateIntentMatchingScore(intentMatchCondition, MSSFDecodeResult.intent, matchData, topSiteScoreResult.isIntent);
-            var intentMatchScore = GenerateIntentMatchingScore(MSSFDecodeResult.otherIntents, MSSFDecodeResult.majorIntent, matchData, queryTermDict);//generate intent feature score
-LogDebug("-1->", intentMatchScore, '<-1-', '\r\n');
+//LogDebug(i,"->", "otherIntentsBegin", MSSFDecodeResult.otherIntents, "otherIntentsEnd\r\n");
+//LogDebug(i,"->", "majorIntentsBegin", MSSFDecodeResult.majorIntents, "majorIntentsEnd\r\n");
+            var intentMatchScore = GenerateIntentMatchingScore(MSSFDecodeResult.otherIntents, MSSFDecodeResult.majorIntents, matchData);//generate intent feature score
+LogDebug(" intentMatchScoreBegin", intentMatchScore, 'intentMatchScoreEnd', '\r\n');
             keyFeaturesOfDocuments.push(new KeyFeatures(entityMatchScore, intentMatchScore, authorityScore, specificSiteScore, 0, 0, topSiteScoreResult, rankScoreVector[i].drScoreRank, 0, isSiteConsMatchDomain));//add intentMatchScore && constraintMatchScore
             top1EntityMatch = entityMatchScore;
             top1IntentMatch = intentMatchScore;
-LogDebug("top1IntentMatch", intentMatchScore, "\r\n");
             sumIntentMatchTop5 += intentMatchScore;
         }
         curDRScore = curDoc.l2score;
@@ -2050,21 +1865,18 @@ LogDebug("top1IntentMatch", intentMatchScore, "\r\n");
         if (i > 0)
         {
             var entityMatchScore = GenerateEntityMatchingScore(MSSFDecodeResult.entity, matchData);//feature:entity, matchData Contain the feature "NumberOfOccurrences_MultiInstanceTitle_0, ... , NumberOfOccurrences_MultiInstanceTitle_7"
-//LogDebug(" entityMatchScoreBegin", entityMatchScore, 'entityMatchScoreEnd ', '\r\n');
+LogDebug(" entityMatchScoreBegin", entityMatchScore, 'entityMatchScoreEnd ', '\r\n');
             topSiteScoreResult = PETopSiteScoreDecode(featureVector[c_FeatureId_PEScoreTopSite], MSSFDecodeResult.urlKeyword, url, featureVector[c_FeatureId_UrlDepth]);
-LogDebug("fetureVector_authorityScore", featureVector[c_FeatureId_PEScoreTopSite], '\r\n');
             //authorityScore = GenerateAuthorityScore(topSiteScoreResult.authorityScore, MSSFDecodeResult.entity, MSSFDecodeResult.siteConstraint, url, curDoc.hostid, curDoc.domainid, MSSFDecodeResult.officialSite, i);
             authorityIsSiteConsMatchScore = GenerateAuthorityScore(topSiteScoreResult.authorityScore, MSSFDecodeResult.entity, MSSFDecodeResult.siteConstraint, url, curDoc.hostid, curDoc.domainid, MSSFDecodeResult.officialSite, i);
             isSiteConsMatchDomain = authorityIsSiteConsMatchScore[1];
 //LogDebug("isSiteConsMatchDomain", i, isSiteConsMatchDomain, '\r\n');
             var authorityScore = authorityIsSiteConsMatchScore[0];
-LogDebug("-0->", authorityScore, "<-0-", '\r\n')
-//LogDebug(" authorityScoreBegin", authorityScore, 'authorityScoreEnd', '\r\n');
+LogDebug(" authorityScoreBegin", authorityScore, 'authorityScoreEnd', '\r\n');
             specificSiteScore = topSiteScoreResult.isSpecific;
             //var intentMatchScore = GenerateIntentMatchingScore(intentMatchCondition, MSSFDecodeResult.intent, matchData, topSiteScoreResult.isIntent);//@Frank generate intent feature score
-//LogDebug("-0->", MSSFDecodeResult.majorIntent.type, MSSFDecodeResult.majorIntent.span, "<-0-\r\n");
-			var intentMatchScore = GenerateIntentMatchingScore(MSSFDecodeResult.otherIntents, MSSFDecodeResult.majorIntent, matchData, queryTermDict);//@Frank generate intent feature score
-LogDebug("-1->", intentMatchScore, '<-1-', '\r\n');
+            var intentMatchScore = GenerateIntentMatchingScore(MSSFDecodeResult.otherIntents, MSSFDecodeResult.majorIntents, matchData);//@Frank generate intent feature score
+LogDebug(" intentMatchScoreBegin", intentMatchScore, 'intentMatchScoreEnd', '\r\n');
 			keyFeaturesOfDocuments.push(new KeyFeatures(entityMatchScore, intentMatchScore, authorityScore, specificSiteScore, 0, 0, topSiteScoreResult, rankScoreVector[i].drScoreRank, 0, isSiteConsMatchDomain));//@Frank add intentMatchScore && constraintMatchScore
 			// KeyFeatures(entityMatchScore, intentMatchScore, authorityScore, specificSiteScore, guardingScore, lowQualitySiteScore, topSiteScoreResult, drScoreRank, constraintMatchScore, isSiteConsMatchDomain)
 //LogDebug("keyFeaturesOfDocuments entityScore", i-1,  keyFeaturesOfDocuments[i-1].isSiteConsMatchDomain, '\r\n');
@@ -2079,7 +1891,6 @@ LogDebug("-1->", intentMatchScore, '<-1-', '\r\n');
         maxDRScorePos = maxDRScorePosTemp;
     }
     matchData = matchDataArray[maxDRScorePos];
-LogDebug("maxDRScorePos", maxDRScorePos, '\r\n');
     drScoreTop1IntentMatch = keyFeaturesOfDocuments[maxDRScorePos].intentMatchScore;
     drScoreTop1EntityMatch = keyFeaturesOfDocuments[maxDRScorePos].entityMatchScore;
 
@@ -2088,8 +1899,8 @@ LogDebug("maxDRScorePos", maxDRScorePos, '\r\n');
 //LogDebug("threshold Score", thresholdArr, "\r\n");
     var entityMatchThreshold = thresholdArr[0];//--Generate through function: GenerateThresholdScore ----
     var intentMatchThreshold = thresholdArr[1];//--Generate through function: GenerateThresholdScore -----
-//LogDebug("entitMatchThresholdBegin", entityMatchThreshold, "entitMatchThresholdEnd", '\r\n');
-//LogDebug("intentMatchThresholdBegin", intentMatchThreshold, "intentMatchThresholdEnd", "\r\n");
+LogDebug("entitMatchThresholdBegin", entityMatchThreshold, "entitMatchThresholdEnd", '\r\n');
+LogDebug("intentMatchThresholdBegin", intentMatchThreshold, "intentMatchThresholdEnd", "\r\n");
     //-----1. Initial End -----
 //LogDebug("keyFeatures", keyFeaturesOfDocuments, '\r\n');
     //-----2. NewL3Score Generate Begin ------
@@ -2102,12 +1913,12 @@ LogDebug("maxDRScorePos", maxDRScorePos, '\r\n');
 //LogDebug("isSiteConsMatchDomain", keyFeaturesOfDocuments[i].isSiteConsMatchDomain, '\r\n');
 //LogDebug("subIntentMatchtop5", sumIntentMatchTop5, '\r\n');
         if (IsGuard(keyFeaturesOfDocuments[i], documentsLocal[i].rerankfeatures, i, entityMatchThreshold, maxDRScorePos, keyFeaturesOfDocuments[i].isSiteConsMatchDomain, sumIntentMatchTop5)) { 
-LogDebug("QueryNeedToRankBegin", i, "QueryNeedToRankEnd", '\r\n');
+LogDebug("QueryNeedToRankBegin", i, "QueryNeedToRankEnd");
             rankVector.push({ index: i, signal: 0.0 });
             rankVectorInOriPlace.push({ index: i });
         }
         else {
-//LogDebug("QueryDoesNotNeedToRankBegin", i, "QueryDoesNotNeedToRankEnd");
+LogDebug("QueryDoesNotNeedToRankBegin", i, "QueryDoesNotNeedToRankEnd");
             documents[i].score = 1000.0 - i;
             guardVector.push({ index: i, signal: 0.0 });
         }
@@ -2122,7 +1933,7 @@ LogDebug("QueryNeedToRankBegin", i, "QueryNeedToRankEnd", '\r\n');
         var currentHostId = documentsLocal[rankVector[i].index].hostid;
 //LogDebug("currentHostId", currentHostId, '\r\n');
 //LogDebug(top20doc,keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, top1EntityMatch,drScoreTop1EntityMatch, top1IntentMatch, drScoreTop1IntentMatch, constraintMatchCondition, MSSFDecodeResult, matchDataArray, curRerankFeatures, '\r\n');
-        if(RankerCondition1(top20doc,keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, top1EntityMatch, drScoreTop1EntityMatch, top1IntentMatch, drScoreTop1IntentMatch, constraintMatchCondition, MSSFDecodeResult, matchDataArray, curRerankFeatures )){
+        if(RankerCondition1(top20doc,keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, top1EntityMatch,drScoreTop1EntityMatch, top1IntentMatch, drScoreTop1IntentMatch, constraintMatchCondition, MSSFDecodeResult, matchDataArray, curRerankFeatures )){
             //-------------------Generate top20 constraint match score Begin ------------------
             /*for(i = 0; i < top20doc; i++){
               matchData = matchDataArray[i];
@@ -2136,7 +1947,7 @@ LogDebug("QueryNeedToRankBegin", i, "QueryNeedToRankEnd", '\r\n');
               }*/
             //Above is generated in RankerCondition1 run current place.
             var constraintMatchThreshold = GenerateConstrainThresholdScore(matchDataArray, documentsLocal, top20doc, keyFeaturesOfDocuments);
-LogDebug("SatisfyRankerCondition1", i, constraintMatchThreshold, '\r\n');
+//LogDebug("constarintMatchThreshold", i, constraintMatchThreshold, '\r\n');
             //-------------------Generate top20 constraint match score End ------------------
 //LogDebug(drScoreThreshold, documentPosition, curKeyFeatures, curRerankFeatures, top20doc, currentHostId, documentsLocal, keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, constraintMatchThreshold, '\r\n');
             if(RankerCondition2(drScoreThreshold, documentPosition, curKeyFeatures, curRerankFeatures, top20doc, currentHostId, documentsLocal, keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, constraintMatchThreshold)){
@@ -2144,11 +1955,11 @@ LogDebug("SatisfyRankerCondition1", i, constraintMatchThreshold, '\r\n');
                 var curIntentMatchScore = curKeyFeatures.intentMatchScore;
                 var curConstraintMatchScore = curKeyFeatures.constraintMatchScore;
                 var curAuthorityScore = curKeyFeatures.authorityScore;
-LogDebug("SatisfyRankerCondition2", curEntityMatchScore, curIntentMatchScore, curConstraintMatchScore, curAuthorityScore, '\r\n');
+//LogDebug("SatisfyRankerCondition2", curEntityMatchScore, curIntentMatchScore, curConstraintMatchScore, curAuthorityScore, '\r\n');
                 if(curEntityMatchScore > 0 && curIntentMatchScore >= 0 && curConstraintMatchScore != 1) {
 //LogDebug(i, curEntityMatchScore, entityMatchThreshold, curIntentMatchScore, intentMatchThreshold, curConstraintMatchScore, constraintMatchThreshold, curAuthorityScore, '\r\n');
                     rankVector[i].signal = SCORE(curEntityMatchScore, entityMatchThreshold, curIntentMatchScore, intentMatchThreshold, curConstraintMatchScore, constraintMatchThreshold, curAuthorityScore);
-LogDebug("needScoringWatch", i, '\r\n');
+//LogDebug(i, rankVector[i].signal, '\r\n');
                 }
                 else {
                     rankVector[i].signal = 100;
@@ -2385,11 +2196,6 @@ function MatchData(title, url, snippet, wordFoundTitleArray, wordFoundBodyArray)
     this.wordFoundTitleArray = wordFoundTitleArray;
     this.wordFoundBodyArray = wordFoundBodyArray;
 }
-
-function IntentClass(type, span){
-	this.type = type;
-	this.span = span;
-}
 //------------------------------------------------ Main Ranker - End ------------------------------------------------
 
 
@@ -2486,8 +2292,8 @@ function WordsFoundForTitleSnippet(phrase, wordFoundArray, stream) {
 }
 
 function ParseWordCandidatePresence(score) {
-    var matchArray = new Array(10);
-    for (var i = 0; i < 10; i++) {
+    var matchArray = new Array(8);
+    for (var i = 0; i < 8; i++) {
         if ((score & 15) > 0) {
             matchArray[i] = 1;
         }
@@ -2517,3 +2323,4 @@ function SortNumberDRScoreDesc(a, b) {
     return b.drScore - a.drScore;
 }
 //------------------------------------------------ Utilities - End ------------------------------------------------
+

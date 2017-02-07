@@ -132,12 +132,12 @@ else {
 //LogDebug("108", query, '\r\n');
     var MSSFDecodeResult = MSSFDecode(msSemanticFrame);
 //LogDebug("-0->", rawquery, "<-0-");
-//LogDebug("MSSFDecode finished", '\r\n');
+LogDebug("MSSFDecode finished", '\r\n');
 LogDebug("query", query, '\r\n');
     var wordDropQuery = query.replace(/word:\((\w+)[^\)]+\)/g, "$1").replace(/rankonly:/g, "");
 LogDebug("wordDropQuery", wordDropQuery, "\r\n");
-    var queryTermArray = wordDropQuery.split(" ");
-   // var queryTermArray = rawquery.split(" ");
+   // var queryTermArray = wordDropQuery.split(" ");
+    var queryTermArray = rawquery.split(" ");
     var queryTermDict = {};
     for (var i = 0, len = queryTermArray.length; i < len; i++) {
         var term = queryTermArray[i];
@@ -166,6 +166,7 @@ LogDebug("queryTermDic", term, i, '\r\n')
         var matchData = new MatchData(title, url, snippet, wordFoundTitleArray, wordFoundBodyArray);
         matchDataArray.push(matchData);
     }
+LogDebug("MainRanker Begin", '\r\n');
     MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArray, intentMatchCondition[c_SubIntentId_LyricsSongLyrics ], constraintMatchCondition[c_SubIntentId_LyricsSongLyrics], documents, documentCount, queryTermDict);
 
 }
@@ -241,13 +242,14 @@ function MSSFDecode(addQuery) {
         else if (key == "intent" || key == "Intent") {
             var majorTypeSpans = {}, otherTypeSpans = {};
             var clusterId = qlfs[c_subIntentIdQLF];
-//LogDebug("MSSFDecode key==intent", clusterId, "clusterId \r\n");
+LogDebug("MSSFDecode key==intent", clusterId, "clusterId \r\n");
             if (!(clusterId in clusterIdToIntentType)){
                 continue;
            }
             var majorType = clusterIdToIntentType[clusterId]; // global variable clusterIdToIntentType; 
-//LogDebug("-4->", majorType, "<-4-\r\n");
+LogDebug("-4->", majorType, "<-4-\r\n");
             var intentTypeSpans = {};
+LogDebug("-5->", value, "<-5-\r\n");
             var intentTypeSpansArr = value.split("^");
             for (var k = 0, len = intentTypeSpansArr.length; k < len; k++){
                 var typeSpanArr = intentTypeSpansArr[k].split('->');// int_lyrics->rolling in the deep & you are beautiful ^ int_download->downloads
@@ -255,10 +257,11 @@ function MSSFDecode(addQuery) {
                     continue;
                 }
                 var intentType = typeSpanArr[0];
+LogDebug("intentType", intentType, '\r\n');
                 var span = typeSpanArr[1].split('&');
-//LogDebug("MSSFDecode key==intity", span, "spanlist\r\n");
+LogDebug("MSSFDecode key==intity", span, "spanlist\r\n");
                 var spanEle;
-//LogDebug("MSSFDecode key==intity", intentType, "intentType\r\n");
+LogDebug("MSSFDecode key==intity", intentType, "intentType\r\n");
 //LogDebug("MSSFDecode key==intity", majorType, "majorType\r\n");
                 if (intentType == majorType) {
 					/*
@@ -523,7 +526,7 @@ function PETopSiteScoreDecode(PETopSiteScore, urlKeyword, url, urlPathDepth) {
     var keyword2 = urlKeyword.keyword2;
     var keyword3 = urlKeyword.keyword3;
 
-    scoreTemp = scoreTemp >>> 9;
+    scoreTemp = scoreTemp >>> 6;
     if (scoreTemp > 0) {
         var extendSection1 = PETopSiteScoreExtendSectionDecode(scoreTemp);
         var isExtend1 = true;
@@ -543,7 +546,7 @@ function PETopSiteScoreDecode(PETopSiteScore, urlKeyword, url, urlPathDepth) {
             result = new PETopSiteScoreDecodeResult(extendSection1.score, extendSection1.isSpecific, extendSection1.isIntent);
         }
         else {
-            scoreTemp = scoreTemp >>> 9;
+            scoreTemp = scoreTemp >>> 12;
             if (scoreTemp > 0) {
                 var extendSection2 = PETopSiteScoreExtendSectionDecode(scoreTemp);
                 var isExtend2 = true;
@@ -576,16 +579,15 @@ function PETopSiteScoreBasicSectionDecode(score) {
     var isIntentBasic = scoreTemp & 1;
 
     scoreTemp = scoreTemp >>> 1;
-//LogDebug("580scoreTemp", scoreTemp, '\r\n');
-    var scoreBasic = scoreTemp & 127;
-//LogDebug("score", score,isSpecificBasic, isIntentBasic, scoreBasic, '\r\n');
+    var scoreBasic = scoreTemp & 15;
+
     return new PETopSiteScoreBasicSection(scoreBasic, isSpecificBasic, isIntentBasic);
 }
 
 function PETopSiteScoreExtendSectionDecode(score) {
     var scoreTemp = score;
     var PETopSiteScoreBasicSectionTemp = PETopSiteScoreBasicSectionDecode(scoreTemp);
-    scoreTemp = scoreTemp >>> 9;
+    scoreTemp = scoreTemp >>> 6;
     var pathDepth = scoreTemp & 7;
 
     scoreTemp = scoreTemp >>> 3;
@@ -827,7 +829,7 @@ LogDebug("-6->", score, "<-6-");
     return score;
 }
 
-function TermMatchWordsFound(entity, queryTermDict, url, title, snippet, wordFoundTitleArray, wordFoundBodyArray) {
+function TermMatchWordsFound(entity, queryTermDict, url, title, snippet， wordFoundTitleArray, wordFoundBodyArray) {
 	var matchTermArray = [0, 0, 0];//url, title, snippet match count
 	if(IsNull(entity)) {
 		return matchTermArray;
@@ -906,7 +908,7 @@ function TermArrayMatchingExactPhrase(keyWords, url, title, snippet){
 
 function GenerateIntentMatchingScore(otherIntents, majorIntent, matchData, queryTermDict, wordFoundTitleArray, wordFoundBodyArray){
 
-//LogDebug("-2->", majorIntent.span, "<-2-", '\r\n');
+LogDebug("-2->", majorIntent, "<-2-", '\r\n');
 	var majorIntentMatch = GenerateIntentMatchingScore_SpecifiedIntent(majorIntent, matchData, queryTermDict);
 LogDebug("-3->", majorIntentMatch, "<-3-", '\r\n');
 	var otherIntentMatch = 0.0;
@@ -928,8 +930,9 @@ LogDebug("-2->", score, "<-2-", '\r\n');
 
 function GenerateIntentMatchingScore_SpecifiedIntent(intent, matchData, queryTermDict){ //intentMajor correspond to clusterId, intentOther is the int_tag come from m:Tags; 
 	if(IsNull(intent)){
-		return 0.0;
+		return 0;
 	}
+LogDebug("GenerateIntentMatchingScore_SpecifiedIntent", intent.type,'\r\n');
     var url = matchData.url;
     var title = matchData.title;
     var snippet = matchData.snippet;
@@ -1618,11 +1621,11 @@ function GenerateGuardingScore(GuardingUrlScore, guardingkeyword, matchData, int
     //****how to compute the guardingScore based on the flowing conditions*******************
     /*
        • Will keep the document’s original position if it meet all the following conditions at the same time:
-       ? At least one document in Top5 IntentMatching > 0; // intentMatchInTop5
-       ? EntityMatching > threshold;
-       ? IntentMatching == 0;
-       ? GuardingScore == 1000 or SiteConstraintMatchDomain == 1000;
-       ? LowQualitySiteScore == 0 and No opposed constraint match.
+       ○ At least one document in Top5 IntentMatching > 0; // intentMatchInTop5
+       ○ EntityMatching > threshold;
+       ○ IntentMatching == 0;
+       ○ GuardingScore == 1000 or SiteConstraintMatchDomain == 1000;
+       ○ LowQualitySiteScore == 0 and No opposed constraint match.
        */
     if (GuardingUrlScore == 100 || IsArrayPhraseMatchForTitleSnippet(guardingkeyword, matchData.title)) {
         return c_guardingScore;
@@ -1735,7 +1738,7 @@ function GenerateThresholdScore(subIntentId, subIntentScore, MSSFDecodeResult, m
 		if(isNaN(numberOfPerfectMatch_BingClick_i)) {
 			numberOfPerfectMatch_BingClick_i = 0.0;
 		}
-LogDebug("Threshold", numberOfPerfectMatch_BingClick_i, onlineMemoryUrlFeature_i, "\r\n");
+//LogDebug("Threshold", numberOfPerfectMatch_BingClick_i, onlineMemoryUrlFeature_i, "\r\n");
 //LogDebug("1.1\t-->", i, numberOfPerfectMatch_BingClick_i, onlineMemoryUrlFeature_i, "<--");
         //Generate entity/intent/cons match score
         var entityMatchScore = keyFeaturesOfDocuments[i].entityMatchScore;
@@ -1755,8 +1758,7 @@ LogDebug("Threshold", numberOfPerfectMatch_BingClick_i, onlineMemoryUrlFeature_i
         drEntityScoreArray[i] = entityMatchScore;
         drIntentScoreArray[i] = intentMatchScore;
     }
-LogDebug("EntityThreshold", drEntityScoreArray, '\r\n');
-LogDebug("IntentThreshold", drIntentScoreArray, "\r\n");
+//LogDebug(drEntityScoreArray, drIntentScoreArray, "\r\n");
     // Generate entity/intent/constrain threshold of FastBrain/BingClick 
     
 	if(sum_thresholdBingClick != 0) {
@@ -1790,7 +1792,7 @@ LogDebug("IntentThreshold", drIntentScoreArray, "\r\n");
     }
     threshold_top_entity = threshold_top_entity / 5.0;
     threshold_top_intent = threshold_top_intent / 5.0;
-LogDebug("\t3-->generateEntityThresholdScore", threshold_top_entity, "<--\t");
+//LogDebug("\t3-->generateEntityThresholdScore", threshold_top_entity, "<--\t");
     //Generate final threshold of entity/intent/constraint
     var threshold_final_entity = GenerateNumNoZero(threshold_top_entity, weightScore_thresholdBingClick_entity, weightScore_fastBrain_entity);
     var threshold_final_intent = GenerateNumNoZero(threshold_top_intent, weightScore_thresholdBingClick_intent, weightScore_fastBrain_intent);
@@ -1799,7 +1801,7 @@ LogDebug("\t3-->generateEntityThresholdScore", threshold_top_entity, "<--\t");
     threshold_final[0] = threshold_final_entity;
     //threshold_final[1] = threshold_final_intent;
     threshold_final[1] = threshold_top_intent;
-LogDebug("res", threshold_final, '\r\n');
+//LogDebug("res", threshold_final, '\r\n');
     return threshold_final;
 }
 
@@ -1823,11 +1825,9 @@ function GenerateDRScoreRank(curDRScore, l3Threshold, l2Threshold, l1Threshold) 
 }
 
 function RankerCondition1(top20doc,keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, top1EntityMatch,drScoreTop1EntityMatch, top1IntentMatch, drScoreTop1IntentMatch, constraintMatchCondition, MSSFDecodeResult, matchDataArray, rerankFeatures ){
-LogDebug("RankerCondition1->0", entityMatchThreshold, top1EntityMatch, entityMatchThreshold, drScoreTop1EntityMatch, entityMatchThreshold, top1IntentMatch, intentMatchThreshold, drScoreTop1IntentMatch, intentMatchThreshold, '\r\n');
     if(!((entityMatchThreshold > 250) && (top1EntityMatch >= entityMatchThreshold) && (drScoreTop1EntityMatch >= entityMatchThreshold) && (top1IntentMatch >= intentMatchThreshold) && (drScoreTop1IntentMatch >= intentMatchThreshold))) {
         return false;
     }
-LogDebug("RankerCondition1->1", '\r\n');
     var top5EntityIntentASCount = 0;
     var top8EntityIntentASCount = 0;
     var top5IntentMatchSum = 0;
@@ -1836,27 +1836,21 @@ LogDebug("RankerCondition1->1", '\r\n');
         var curEntityScore = keyFeaturesOfDocuments[i].entityMatchScore;
         var curIntentScore = keyFeaturesOfDocuments[i].intentMatchScore;
         var curAuthorityScore = keyFeaturesOfDocuments[i].authorityScore;
-LogDebug("RankerCondition1->1.5", i, curEntityScore, entityMatchThreshold, curIntentScore, intentMatchThreshold, curAuthorityScore, '\r\n');
-        if ((i < 5) && (curEntityScore >= entityMatchThreshold) && (curIntentScore >= intentMatchThreshold) && (curAuthorityScore >= 0)) {
+        if ((i < 5) && (curEntityScore >= entityMatchThreshold) && (curIntentScore >= intentMatchThreshold) && (curAuthorityScore > 0)) {
             top5EntityIntentASCount++;
             top8EntityIntentASCount++;
             top5IntentMatchSum += curIntentScore;
         }
-        if ((i >= 5 && i < 8) && (curEntityScore >= entityMatchThreshold) && (curIntentScore >= intentMatchThreshold) && (curAuthorityScore >= 0)) {
+        if ((i >= 5 && i < 8) && (curEntityScore >= entityMatchThreshold) && (curIntentScore >= intentMatchThreshold) && (curAuthorityScore > 0)) {
             top8EntityIntentASCount++;
         }
     }
-LogDebug("RankerCondition1->2", '\r\n');
-LogDebug("RankerCondition1->2.5", top5EntityIntentASCount, top8EntityIntentASCount, "\r\n"); 
     if(!(top5EntityIntentASCount >= 2 || top8EntityIntentASCount >= 4)) {
         return false;
     }
-
-LogDebug("RankerCondition1->3", '\r\n');
     if(top5IntentMatchSum !== 0) {
         return true;
     }
-LogDebug("RankerCondition1->4", '\r\n');
     var top5ConstraintMatchSum = 0, matchData, url, authorityScore, constraintMatchUrlScore, constraintMatchScore;
     for (i = 0; i < Math.min(top20doc, 5); ++i) {
         matchData = matchDataArray[i];
@@ -1963,7 +1957,7 @@ function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArra
         curDoc = documentsLocal[i];
         curDRScore = curDoc.l2score;
         rankScoreVector.push({ oriIndex : i, drScoreRank: 0.0, drScore : curDRScore, newL3Score2: 1000 - i});
-//LogDebug("curDRScoreBegin->", curDRScore, "<-curDRScore End");
+LogDebug("curDRScoreBegin->", curDRScore, "<-curDRScore End");
         if (curDRScore > maxDRScoreTop20) {
             maxDRScoreTop20 = curDRScore;
         }
@@ -1979,7 +1973,7 @@ function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArra
     l2Threshold = tmpThreshold * 2 + minDRScoreTop20;
     l1Threshold = tmpThreshold * 3 + minDRScoreTop20;
 
-//LogDebug(l3Threshold, l2Threshold, l1Threshold, maxDRScoreTop20, minDRScoreTop20, '\r\n');
+LogDebug(l3Threshold, l2Threshold, l1Threshold, maxDRScoreTop20, minDRScoreTop20, '\r\n');
     for (var i = 0; i < top20doc; i++){
 		var curDRScore = documentsLocal[i].l2score;
         rankScoreVector[i].drScoreRank = GenerateDRScoreRank(curDRScore, l3Threshold, l2Threshold, l1Threshold);
@@ -1990,7 +1984,7 @@ for(var j = 0; j < top20doc; j++) {
 }
 */
     //---------------   step1 DRScoreRank End ----------------------------
-//LogDebug("step1 DRScoreRank End", '\r\n');
+LogDebug("step1 DRScoreRank End", '\r\n');
     //------------------------------ Step2 NewL3Score ranker Begin ------------------------------------
     //-----1. Initial Begin -----
     var drScoreThreshold = 0;
@@ -1999,7 +1993,7 @@ for(var j = 0; j < top20doc; j++) {
     rankScoreVector.sort(SortNumberDRScoreDesc);
     var thresholdPos = Math.min(15, top20doc) - 1;
     var oriPos = rankScoreVector[thresholdPos].oriIndex;
-//LogDebug("oriPos of rankScoreVector_15th", oriPos, '\r\n');
+LogDebug("oriPos of rankScoreVector_15th", oriPos, '\r\n');
     var maxDRScorePos = 0;
     var top1EntityMatch = 0;
     var top1IntentMatch = 0;
@@ -2019,23 +2013,20 @@ for(var j = 0; j < top20doc; j++) {
 LogDebug("\turlBegin:", url, 'urlEnd\t');
         if (i == 0){
             var entityMatchScore = GenerateEntityMatchingScore(MSSFDecodeResult.entity, matchData);//feature:entity, matchData Contain the feature "NumberOfOccurrences_MultiInstanceTitle_0, ... , NumberOfOccurrences_MultiInstanceTitle_7"
-//LogDebug(" entityMatchScoreBegin", entityMatchScore, 'entityMatchScoreEnd', '\r\n');
+LogDebug(" entityMatchScoreBegin", entityMatchScore, 'entityMatchScoreEnd', '\r\n');
             topSiteScoreResult = PETopSiteScoreDecode(featureVector[c_FeatureId_PEScoreTopSite], MSSFDecodeResult.urlKeyword, url, featureVector[c_FeatureId_UrlDepth]);
-//LogDebug("peScoreTopSite", featureVector[0], '\r\n');
-LogDebug("authorityScore", topSiteScoreResult.authorityScore, "\r\n");
             authorityIsSiteConsMatchScore = GenerateAuthorityScore(topSiteScoreResult.authorityScore, MSSFDecodeResult.entity, MSSFDecodeResult.siteConstraint, url, curDoc.hostid, curDoc.domainid, MSSFDecodeResult.officialSite, i);
             isSiteConsMatchDomain = authorityIsSiteConsMatchScore[1];
             var authorityScore = authorityIsSiteConsMatchScore[0];
-LogDebug("-0->", authorityScore, "<-0-", '\r\n');
-//LogDebug(" authorityScoreBegin", authorityScore, 'authorityScoreEnd', '\r\n');
+LogDebug(" authorityScoreBegin", authorityScore, 'authorityScoreEnd', '\r\n');
             specificSiteScore = topSiteScoreResult.isSpecific;
             //var intentMatchScore = GenerateIntentMatchingScore(intentMatchCondition, MSSFDecodeResult.intent, matchData, topSiteScoreResult.isIntent);
+LogDebug("GenerateIntentMatchingScore Begin", '\r\n');
             var intentMatchScore = GenerateIntentMatchingScore(MSSFDecodeResult.otherIntents, MSSFDecodeResult.majorIntent, matchData, queryTermDict);//generate intent feature score
 LogDebug("-1->", intentMatchScore, '<-1-', '\r\n');
             keyFeaturesOfDocuments.push(new KeyFeatures(entityMatchScore, intentMatchScore, authorityScore, specificSiteScore, 0, 0, topSiteScoreResult, rankScoreVector[i].drScoreRank, 0, isSiteConsMatchDomain));//add intentMatchScore && constraintMatchScore
             top1EntityMatch = entityMatchScore;
             top1IntentMatch = intentMatchScore;
-LogDebug("top1IntentMatch", intentMatchScore, "\r\n");
             sumIntentMatchTop5 += intentMatchScore;
         }
         curDRScore = curDoc.l2score;
@@ -2052,13 +2043,11 @@ LogDebug("top1IntentMatch", intentMatchScore, "\r\n");
             var entityMatchScore = GenerateEntityMatchingScore(MSSFDecodeResult.entity, matchData);//feature:entity, matchData Contain the feature "NumberOfOccurrences_MultiInstanceTitle_0, ... , NumberOfOccurrences_MultiInstanceTitle_7"
 //LogDebug(" entityMatchScoreBegin", entityMatchScore, 'entityMatchScoreEnd ', '\r\n');
             topSiteScoreResult = PETopSiteScoreDecode(featureVector[c_FeatureId_PEScoreTopSite], MSSFDecodeResult.urlKeyword, url, featureVector[c_FeatureId_UrlDepth]);
-LogDebug("fetureVector_authorityScore", featureVector[c_FeatureId_PEScoreTopSite], '\r\n');
             //authorityScore = GenerateAuthorityScore(topSiteScoreResult.authorityScore, MSSFDecodeResult.entity, MSSFDecodeResult.siteConstraint, url, curDoc.hostid, curDoc.domainid, MSSFDecodeResult.officialSite, i);
             authorityIsSiteConsMatchScore = GenerateAuthorityScore(topSiteScoreResult.authorityScore, MSSFDecodeResult.entity, MSSFDecodeResult.siteConstraint, url, curDoc.hostid, curDoc.domainid, MSSFDecodeResult.officialSite, i);
             isSiteConsMatchDomain = authorityIsSiteConsMatchScore[1];
 //LogDebug("isSiteConsMatchDomain", i, isSiteConsMatchDomain, '\r\n');
             var authorityScore = authorityIsSiteConsMatchScore[0];
-LogDebug("-0->", authorityScore, "<-0-", '\r\n')
 //LogDebug(" authorityScoreBegin", authorityScore, 'authorityScoreEnd', '\r\n');
             specificSiteScore = topSiteScoreResult.isSpecific;
             //var intentMatchScore = GenerateIntentMatchingScore(intentMatchCondition, MSSFDecodeResult.intent, matchData, topSiteScoreResult.isIntent);//@Frank generate intent feature score
@@ -2079,7 +2068,6 @@ LogDebug("-1->", intentMatchScore, '<-1-', '\r\n');
         maxDRScorePos = maxDRScorePosTemp;
     }
     matchData = matchDataArray[maxDRScorePos];
-LogDebug("maxDRScorePos", maxDRScorePos, '\r\n');
     drScoreTop1IntentMatch = keyFeaturesOfDocuments[maxDRScorePos].intentMatchScore;
     drScoreTop1EntityMatch = keyFeaturesOfDocuments[maxDRScorePos].entityMatchScore;
 
@@ -2102,7 +2090,7 @@ LogDebug("maxDRScorePos", maxDRScorePos, '\r\n');
 //LogDebug("isSiteConsMatchDomain", keyFeaturesOfDocuments[i].isSiteConsMatchDomain, '\r\n');
 //LogDebug("subIntentMatchtop5", sumIntentMatchTop5, '\r\n');
         if (IsGuard(keyFeaturesOfDocuments[i], documentsLocal[i].rerankfeatures, i, entityMatchThreshold, maxDRScorePos, keyFeaturesOfDocuments[i].isSiteConsMatchDomain, sumIntentMatchTop5)) { 
-LogDebug("QueryNeedToRankBegin", i, "QueryNeedToRankEnd", '\r\n');
+//LogDebug("QueryNeedToRankBegin", i, "QueryNeedToRankEnd");
             rankVector.push({ index: i, signal: 0.0 });
             rankVectorInOriPlace.push({ index: i });
         }
@@ -2122,7 +2110,7 @@ LogDebug("QueryNeedToRankBegin", i, "QueryNeedToRankEnd", '\r\n');
         var currentHostId = documentsLocal[rankVector[i].index].hostid;
 //LogDebug("currentHostId", currentHostId, '\r\n');
 //LogDebug(top20doc,keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, top1EntityMatch,drScoreTop1EntityMatch, top1IntentMatch, drScoreTop1IntentMatch, constraintMatchCondition, MSSFDecodeResult, matchDataArray, curRerankFeatures, '\r\n');
-        if(RankerCondition1(top20doc,keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, top1EntityMatch, drScoreTop1EntityMatch, top1IntentMatch, drScoreTop1IntentMatch, constraintMatchCondition, MSSFDecodeResult, matchDataArray, curRerankFeatures )){
+        if(RankerCondition1(top20doc,keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, top1EntityMatch,drScoreTop1EntityMatch, top1IntentMatch, drScoreTop1IntentMatch, constraintMatchCondition, MSSFDecodeResult, matchDataArray, curRerankFeatures )){
             //-------------------Generate top20 constraint match score Begin ------------------
             /*for(i = 0; i < top20doc; i++){
               matchData = matchDataArray[i];
@@ -2136,7 +2124,7 @@ LogDebug("QueryNeedToRankBegin", i, "QueryNeedToRankEnd", '\r\n');
               }*/
             //Above is generated in RankerCondition1 run current place.
             var constraintMatchThreshold = GenerateConstrainThresholdScore(matchDataArray, documentsLocal, top20doc, keyFeaturesOfDocuments);
-LogDebug("SatisfyRankerCondition1", i, constraintMatchThreshold, '\r\n');
+//LogDebug("constarintMatchThreshold", i, constraintMatchThreshold, '\r\n');
             //-------------------Generate top20 constraint match score End ------------------
 //LogDebug(drScoreThreshold, documentPosition, curKeyFeatures, curRerankFeatures, top20doc, currentHostId, documentsLocal, keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, constraintMatchThreshold, '\r\n');
             if(RankerCondition2(drScoreThreshold, documentPosition, curKeyFeatures, curRerankFeatures, top20doc, currentHostId, documentsLocal, keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, constraintMatchThreshold)){
@@ -2144,11 +2132,11 @@ LogDebug("SatisfyRankerCondition1", i, constraintMatchThreshold, '\r\n');
                 var curIntentMatchScore = curKeyFeatures.intentMatchScore;
                 var curConstraintMatchScore = curKeyFeatures.constraintMatchScore;
                 var curAuthorityScore = curKeyFeatures.authorityScore;
-LogDebug("SatisfyRankerCondition2", curEntityMatchScore, curIntentMatchScore, curConstraintMatchScore, curAuthorityScore, '\r\n');
+//LogDebug("SatisfyRankerCondition2", curEntityMatchScore, curIntentMatchScore, curConstraintMatchScore, curAuthorityScore, '\r\n');
                 if(curEntityMatchScore > 0 && curIntentMatchScore >= 0 && curConstraintMatchScore != 1) {
 //LogDebug(i, curEntityMatchScore, entityMatchThreshold, curIntentMatchScore, intentMatchThreshold, curConstraintMatchScore, constraintMatchThreshold, curAuthorityScore, '\r\n');
                     rankVector[i].signal = SCORE(curEntityMatchScore, entityMatchThreshold, curIntentMatchScore, intentMatchThreshold, curConstraintMatchScore, constraintMatchThreshold, curAuthorityScore);
-LogDebug("needScoringWatch", i, '\r\n');
+//LogDebug(i, rankVector[i].signal, '\r\n');
                 }
                 else {
                     rankVector[i].signal = 100;
@@ -2517,3 +2505,4 @@ function SortNumberDRScoreDesc(a, b) {
     return b.drScore - a.drScore;
 }
 //------------------------------------------------ Utilities - End ------------------------------------------------
+

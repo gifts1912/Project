@@ -523,7 +523,7 @@ function PETopSiteScoreDecode(PETopSiteScore, urlKeyword, url, urlPathDepth) {
     var keyword2 = urlKeyword.keyword2;
     var keyword3 = urlKeyword.keyword3;
 
-    scoreTemp = scoreTemp >>> 9;
+    scoreTemp = scoreTemp >>> 6;
     if (scoreTemp > 0) {
         var extendSection1 = PETopSiteScoreExtendSectionDecode(scoreTemp);
         var isExtend1 = true;
@@ -543,7 +543,7 @@ function PETopSiteScoreDecode(PETopSiteScore, urlKeyword, url, urlPathDepth) {
             result = new PETopSiteScoreDecodeResult(extendSection1.score, extendSection1.isSpecific, extendSection1.isIntent);
         }
         else {
-            scoreTemp = scoreTemp >>> 9;
+            scoreTemp = scoreTemp >>> 12;
             if (scoreTemp > 0) {
                 var extendSection2 = PETopSiteScoreExtendSectionDecode(scoreTemp);
                 var isExtend2 = true;
@@ -576,16 +576,15 @@ function PETopSiteScoreBasicSectionDecode(score) {
     var isIntentBasic = scoreTemp & 1;
 
     scoreTemp = scoreTemp >>> 1;
-//LogDebug("580scoreTemp", scoreTemp, '\r\n');
-    var scoreBasic = scoreTemp & 127;
-//LogDebug("score", score,isSpecificBasic, isIntentBasic, scoreBasic, '\r\n');
+    var scoreBasic = scoreTemp & 15;
+
     return new PETopSiteScoreBasicSection(scoreBasic, isSpecificBasic, isIntentBasic);
 }
 
 function PETopSiteScoreExtendSectionDecode(score) {
     var scoreTemp = score;
     var PETopSiteScoreBasicSectionTemp = PETopSiteScoreBasicSectionDecode(scoreTemp);
-    scoreTemp = scoreTemp >>> 9;
+    scoreTemp = scoreTemp >>> 6;
     var pathDepth = scoreTemp & 7;
 
     scoreTemp = scoreTemp >>> 3;
@@ -827,7 +826,7 @@ LogDebug("-6->", score, "<-6-");
     return score;
 }
 
-function TermMatchWordsFound(entity, queryTermDict, url, title, snippet, wordFoundTitleArray, wordFoundBodyArray) {
+function TermMatchWordsFound(entity, queryTermDict, url, title, snippet， wordFoundTitleArray, wordFoundBodyArray) {
 	var matchTermArray = [0, 0, 0];//url, title, snippet match count
 	if(IsNull(entity)) {
 		return matchTermArray;
@@ -927,9 +926,6 @@ LogDebug("-2->", score, "<-2-", '\r\n');
 }
 
 function GenerateIntentMatchingScore_SpecifiedIntent(intent, matchData, queryTermDict){ //intentMajor correspond to clusterId, intentOther is the int_tag come from m:Tags; 
-	if(IsNull(intent)){
-		return 0.0;
-	}
     var url = matchData.url;
     var title = matchData.title;
     var snippet = matchData.snippet;
@@ -1618,11 +1614,11 @@ function GenerateGuardingScore(GuardingUrlScore, guardingkeyword, matchData, int
     //****how to compute the guardingScore based on the flowing conditions*******************
     /*
        • Will keep the document’s original position if it meet all the following conditions at the same time:
-       ? At least one document in Top5 IntentMatching > 0; // intentMatchInTop5
-       ? EntityMatching > threshold;
-       ? IntentMatching == 0;
-       ? GuardingScore == 1000 or SiteConstraintMatchDomain == 1000;
-       ? LowQualitySiteScore == 0 and No opposed constraint match.
+       ○ At least one document in Top5 IntentMatching > 0; // intentMatchInTop5
+       ○ EntityMatching > threshold;
+       ○ IntentMatching == 0;
+       ○ GuardingScore == 1000 or SiteConstraintMatchDomain == 1000;
+       ○ LowQualitySiteScore == 0 and No opposed constraint match.
        */
     if (GuardingUrlScore == 100 || IsArrayPhraseMatchForTitleSnippet(guardingkeyword, matchData.title)) {
         return c_guardingScore;
@@ -2021,12 +2017,9 @@ LogDebug("\turlBegin:", url, 'urlEnd\t');
             var entityMatchScore = GenerateEntityMatchingScore(MSSFDecodeResult.entity, matchData);//feature:entity, matchData Contain the feature "NumberOfOccurrences_MultiInstanceTitle_0, ... , NumberOfOccurrences_MultiInstanceTitle_7"
 //LogDebug(" entityMatchScoreBegin", entityMatchScore, 'entityMatchScoreEnd', '\r\n');
             topSiteScoreResult = PETopSiteScoreDecode(featureVector[c_FeatureId_PEScoreTopSite], MSSFDecodeResult.urlKeyword, url, featureVector[c_FeatureId_UrlDepth]);
-//LogDebug("peScoreTopSite", featureVector[0], '\r\n');
-LogDebug("authorityScore", topSiteScoreResult.authorityScore, "\r\n");
             authorityIsSiteConsMatchScore = GenerateAuthorityScore(topSiteScoreResult.authorityScore, MSSFDecodeResult.entity, MSSFDecodeResult.siteConstraint, url, curDoc.hostid, curDoc.domainid, MSSFDecodeResult.officialSite, i);
             isSiteConsMatchDomain = authorityIsSiteConsMatchScore[1];
             var authorityScore = authorityIsSiteConsMatchScore[0];
-LogDebug("-0->", authorityScore, "<-0-", '\r\n');
 //LogDebug(" authorityScoreBegin", authorityScore, 'authorityScoreEnd', '\r\n');
             specificSiteScore = topSiteScoreResult.isSpecific;
             //var intentMatchScore = GenerateIntentMatchingScore(intentMatchCondition, MSSFDecodeResult.intent, matchData, topSiteScoreResult.isIntent);
@@ -2052,13 +2045,11 @@ LogDebug("top1IntentMatch", intentMatchScore, "\r\n");
             var entityMatchScore = GenerateEntityMatchingScore(MSSFDecodeResult.entity, matchData);//feature:entity, matchData Contain the feature "NumberOfOccurrences_MultiInstanceTitle_0, ... , NumberOfOccurrences_MultiInstanceTitle_7"
 //LogDebug(" entityMatchScoreBegin", entityMatchScore, 'entityMatchScoreEnd ', '\r\n');
             topSiteScoreResult = PETopSiteScoreDecode(featureVector[c_FeatureId_PEScoreTopSite], MSSFDecodeResult.urlKeyword, url, featureVector[c_FeatureId_UrlDepth]);
-LogDebug("fetureVector_authorityScore", featureVector[c_FeatureId_PEScoreTopSite], '\r\n');
             //authorityScore = GenerateAuthorityScore(topSiteScoreResult.authorityScore, MSSFDecodeResult.entity, MSSFDecodeResult.siteConstraint, url, curDoc.hostid, curDoc.domainid, MSSFDecodeResult.officialSite, i);
             authorityIsSiteConsMatchScore = GenerateAuthorityScore(topSiteScoreResult.authorityScore, MSSFDecodeResult.entity, MSSFDecodeResult.siteConstraint, url, curDoc.hostid, curDoc.domainid, MSSFDecodeResult.officialSite, i);
             isSiteConsMatchDomain = authorityIsSiteConsMatchScore[1];
 //LogDebug("isSiteConsMatchDomain", i, isSiteConsMatchDomain, '\r\n');
             var authorityScore = authorityIsSiteConsMatchScore[0];
-LogDebug("-0->", authorityScore, "<-0-", '\r\n')
 //LogDebug(" authorityScoreBegin", authorityScore, 'authorityScoreEnd', '\r\n');
             specificSiteScore = topSiteScoreResult.isSpecific;
             //var intentMatchScore = GenerateIntentMatchingScore(intentMatchCondition, MSSFDecodeResult.intent, matchData, topSiteScoreResult.isIntent);//@Frank generate intent feature score
@@ -2517,3 +2508,4 @@ function SortNumberDRScoreDesc(a, b) {
     return b.drScore - a.drScore;
 }
 //------------------------------------------------ Utilities - End ------------------------------------------------
+
