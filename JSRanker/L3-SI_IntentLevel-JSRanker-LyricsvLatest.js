@@ -1896,7 +1896,7 @@ function RankerCondition1(top20doc,keyFeaturesOfDocuments, entityMatchThreshold,
         var curEntityScore = keyFeaturesOfDocuments[i].entityMatchScore;
         var curIntentScore = keyFeaturesOfDocuments[i].intentMatchScore;
         var curAuthorityScore = keyFeaturesOfDocuments[i].authorityScore;
-LogDebug("RankerCondition1->1.5", i, curEntityScore, curIntentScore, curAuthorityScore, '\r\n');
+//LogDebug("RankerCondition1->1.5", i, curEntityScore, curIntentScore, curAuthorityScore, '\r\n');
         if ((i < 5) && (curEntityScore >= entityMatchThreshold) && (curIntentScore >= intentMatchThreshold) && (curAuthorityScore > 0)) {
             top5EntityIntentASCount++;
             top8EntityIntentASCount++;
@@ -2210,24 +2210,23 @@ LogDebug("RankerCondition1 Satisfied", '\r\n');
 //LogDebug("SatisfyRankerCondition2", curEntityMatchScore, curIntentMatchScore, curConstraintMatchScore, curAuthorityScore, '\r\n');
                 if(curEntityMatchScore > 0 && curIntentMatchScore >= 0 && curConstraintMatchScore != 1) {
 //LogDebug(i, curEntityMatchScore, entityMatchThreshold, curIntentMatchScore, intentMatchThreshold, curConstraintMatchScore, constraintMatchThreshold, curAuthorityScore, '\r\n');
-                    rankVector[i].signal = SCORE(curEntityMatchScore, entityMatchThreshold, curIntentMatchScore, intentMatchThreshold, curConstraintMatchScore, constraintMatchThreshold, curAuthorityScore);
+                    rankVector[i].signal = SCORE(curEntityMatchScore, entityMatchThreshold, curIntentMatchScore, intentMatchThreshold, curConstraintMatchScore, constraintMatchThreshold, curAuthorityScore) + (0.95 - i / 20.0);
 //LogDebug("needScoringWatch", i, '\r\n');
                 }
                 else {
-                    rankVector[i].signal = 100;
+                    rankVector[i].signal = 100 + (0.95 - i / 20.0);
                 }
             }
             else {
 //LogDebug(i, "notSafisyRankerCondition2", '\r\n');
-                rankVector[i].signal = 100;
+                rankVector[i].signal = 100 + (0.95 - i / 20.0);
             }
         }
         else {
 //LogDebug(i, "not satisfy RankerCondition1", '\r\n');
-            rankVector[i].signal = 1000.0 - i;
+            rankVector[i].signal = 1000.0 - i + (0.95 - i / 20.0);
         }
     }
-
     rankVector.sort(SortDescending);
 for(i = 0; i < rankVector.length; i++){
 	LogDebug("rankVector", rankVector[i].index, rankVector[i].signal, '\r\n');
@@ -2275,47 +2274,38 @@ LogDebug('adjustCondition1Satisfy', '\r\n');
             adjustRankerVector[j].signal = 1000.0 - j;
         }
     }
-/*for(i = 0; i < adjustRankerVector.length; i++){
-	var oriPos = adjustRankerVector[i].index;
-LogDebug("adjustL3Ranker_oriRankerVector", oriPos, documents[oriPos].url, adjustRankerVector[i].signal, '\r\n');
-}*/
 
     //----------------------------- Step3 Adjust L3 ranker End ------------------------------------
     //----------------------------- Step4 Sorted document based on AuthorityScore and NewL3Score2 Begin ------------------------------
     //a. document rank position based on authorityScore 
     var rankByAuthoScore = [];
-    var rankByNewL3Score = [];
     for (i = 0; i < top20doc; ++i){
         var curAuthorityScore = keyFeaturesOfDocuments[i].authorityScore;
         rankByAuthoScore.push({index:i, signal:curAuthorityScore});
     }
     rankByAuthoScore.sort(SortDescending);
-    //b. document rank position based on NewL3Score2
-    adjustRankerVector.sort(SortDescending);
-
-
-/*for(i = 0; i < adjustRankerVector.length; i++){
-	LogDebug("rankByNewL3Score", i, adjustRankerVector[i].index, documents[adjustRankerVector[i].index].url, adjustRankerVector[i].signal, '\r\n');
-}*/
+    //b. document rank position based on NewL3Score2  adjustRankerVector.sort(SortDescending) finished before
     //----------------------------- Step4 Sorted document based on AuthorityScore and NewL3Score2 End ------------------------------
-//LogDebug("Step4 Sorted document based on AuthorityScore and NewL3Score2 End", '\r\n');
+
     //---------------------------- Step5 sorted final feature change Begin -------------------
     var equalCount = 0;
-    for (i = 0; i < Math.min(5, rankByNewL3Score.length); ++i){
-        if(rankByNewL3Score[i].index == rankByAuthoScore[i].index){
+    for (i = 0; i < Math.min(5, adjustRankerVector.length); ++i){
+        if(adjustRankerVector[i].index == rankByAuthoScore[i].index){
             equalCount++;
         }
     }
 //LogDebug("equalCount", equalCount, rankByNewL3Score, '\r\n');
-
-    if(equalCount != 5){
-        for (i = 0; i < adjustRankerVector.length; ++i){
-LogDebug("documenstScore", adjustRankerVector[i].index, documents[adjustRankerVector[i].index].url, adjustRankerVector[i].signal, '\r\n');
-            documents[adjustRankerVector[i].index].score = adjustRankerVector[i].signal;
+	if(equalCount == 5){
+        for(var j = 0; j < top20doc; ++j){
+			adjustRankerVector[j].index = 0;
+            adjustRankerVector[j].signal = 1000.0 - j;
         }
     }
+    for (i = 0; i < adjustRankerVector.length; ++i){
+LogDebug("documenstScore", adjustRankerVector[i].index, documents[adjustRankerVector[i].index].url, adjustRankerVector[i].signal, '\r\n');
+        documents[adjustRankerVector[i].index].score = adjustRankerVector[i].signal;
+    }
     //---------------------------- Step5 sorted final feature change End -------------------
-//LogDebug("Step5 sorted final feature change End", '\r\n');
 }
 
 function GenerateTop20DocConstraintMatchingScore(top20doc, matchDataArray, keyFeaturesOfDocuments, MSSFDecodeResult, documentsLocal, constraintMatchCondition){
