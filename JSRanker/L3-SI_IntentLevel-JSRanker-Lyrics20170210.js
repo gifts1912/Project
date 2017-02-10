@@ -1896,7 +1896,7 @@ function RankerCondition1(top20doc,keyFeaturesOfDocuments, entityMatchThreshold,
         var curEntityScore = keyFeaturesOfDocuments[i].entityMatchScore;
         var curIntentScore = keyFeaturesOfDocuments[i].intentMatchScore;
         var curAuthorityScore = keyFeaturesOfDocuments[i].authorityScore;
-LogDebug("RankerCondition1->1.5", i, curEntityScore, curIntentScore, curAuthorityScore, '\r\n');
+//LogDebug("RankerCondition1->1.5", i, curEntityScore, curIntentScore, curAuthorityScore, '\r\n');
         if ((i < 5) && (curEntityScore >= entityMatchThreshold) && (curIntentScore >= intentMatchThreshold) && (curAuthorityScore > 0)) {
             top5EntityIntentASCount++;
             top8EntityIntentASCount++;
@@ -2227,60 +2227,48 @@ LogDebug("RankerCondition1 Satisfied", '\r\n');
             rankVector[i].signal = 1000.0 - i;
         }
     }
+//LogDebug("NewL3Score Generate End", '\r\n');
+    //-----2. NewL3Score Generate End ------
 
-    rankVector.sort(SortDescending);
-for(i = 0; i < rankVector.length; i++){
-	LogDebug("rankVector", rankVector[i].index, rankVector[i].signal, '\r\n');
-}
-    //---- rankScoreVector store score feature newL3Score2 ----
-   /* for(i = 0; i < rankDocLength; ++i){
-        rankScoreVector[rankVector[i].index].newL3Score2 = 1000.0 - rankVectorInOriPlace[i].index;
- LogDebug("newl3ScoreAssign", rankVector[i].index, 1000.0 - rankVectorInOriPlace[i].index, '\r\n');
+    var oriRankVector = [];
+    for(var i = 0; i < rankVector.length; ++i){
+        oriRankVector.push({index: rankVector[i].index, signal:rankVector[i].signal});
     }
-	for(i = 0; i < top20doc; i ++) {
-		LogDebug("RankerByL3Score2", rankScoreVector[i].oriIndex, documents[rankScoreVector[i].oriIndex].url, rankScoreVector[i].newL3Score2, '\r\n');
-	}*/
+    rankVector.sort(SortDescending);
+/*	
+for(var i = 0; i < rankVector.length; ++i){
+LogDebug('rankVector', i, rankVector[i].index, rankVector[i].signal, '\r\n');
+}*/
+    //---- rankScoreVector store score feature newL3Score2 ----
+    for(i = 0; i < rankDocLength; ++i){
+        rankScoreVector[rankVector[i].index].newL3Score2 = 1000.0 - rankVectorInOriPlace[i].index;
+        //documents[rankVector[i].index].score = 1000.0 - rankVectorInOriPlace[i].index;
+    }
     //------------------------------ Step2 NewL3Score ranker End ------------------------------------
 
 //LogDebug("Step2 NewL3Score ranker End", '\r\n');
     //----------------------------- Step3 Adjust L3 ranker Begin  ------------------------------------
-	var adjustRankerVector = [];
-	for(i = 0; i < top20doc; i++) {
-		adjustRankerVector.push({index:i, signal:1000.0 - i});
-	}
-    //rankScoreVector.sort(SortDescendingByNewL3Score);
-	//----asign newL3Score-----
-	for(i = 0; i < rankVector.length; i++){
-		adjustRankerVector[rankVector[i].index].signal = 1000.0 - rankVectorInOriPlace[i].index;
-	}
-	adjustRankerVector.sort(SortDescending);
-	var posby0 = 0;
-	for(i = 0; i < adjustRankerVector.length; i++){
-		if (adjustRankerVector[i].index == 0){
-			posby0 = i;
-			break;
-		}
-	}
-
-for(var i = 0; i < adjustRankerVector.length; ++i){
-	var oriPos = adjustRankerVector[i].index;
-LogDebug("RankerByNewL3Score", i, adjustRankerVector[i].index, documents[oriPos].url, adjustRankerVector[i].signal, '\r\n');
-}
-   
-LogDebug("posby0", posby0, '\r\n');
-    if(posby0 >= 8 || adjustCondition1(rankScoreVector, documentsLocal)){
-LogDebug('adjustCondition1Satisfy', '\r\n');
-        for(var j = 0; j < top20doc; ++j){
-			adjustRankerVector[j].index = 0;
-            adjustRankerVector[j].signal = 1000.0 - j;
+    rankScoreVector.sort(SortDescendingByNewL3Score);
+/*for(var i = 0; i < rankScoreVector.length; ++i){
+LogDebug("RankerByNewL3Score", i, rankScoreVector[i].oriIndex, rankScoreVector[i].newL3Score2, '\r\n');
+}*/
+    var posby0 = 0;
+    for(i = 0; i < rankScoreVector.length; ++i){
+        if(rankScoreVector[i].oriIndex == 0){
+            posby0 = i;
+            break;
         }
     }
-/*for(i = 0; i < adjustRankerVector.length; i++){
-	var oriPos = adjustRankerVector[i].index;
-LogDebug("adjustL3Ranker_oriRankerVector", oriPos, documents[oriPos].url, adjustRankerVector[i].signal, '\r\n');
-}*/
-
+LogDebug("posby0", posby0, '\r\n');
+//LogDebug(posby0, '\r\n');
+    if(posby0 >= 8 || adjustCondition1(rankScoreVector, documentsLocal)){
+LogDebug('adjustCondition1Satisfy', '\r\n');
+        for(var j = 0; j < oriRankVector.length; ++j){
+            oriRankVector[j].signal = 1000.0 - j;
+        }
+    }
     //----------------------------- Step3 Adjust L3 ranker End ------------------------------------
+//LogDebug("Step3 Adjust L3 ranker End", '\r\n');
     //----------------------------- Step4 Sorted document based on AuthorityScore and NewL3Score2 Begin ------------------------------
     //a. document rank position based on authorityScore 
     var rankByAuthoScore = [];
@@ -2290,13 +2278,23 @@ LogDebug("adjustL3Ranker_oriRankerVector", oriPos, documents[oriPos].url, adjust
         rankByAuthoScore.push({index:i, signal:curAuthorityScore});
     }
     rankByAuthoScore.sort(SortDescending);
-    //b. document rank position based on NewL3Score2
-    adjustRankerVector.sort(SortDescending);
-
-
-/*for(i = 0; i < adjustRankerVector.length; i++){
-	LogDebug("rankByNewL3Score", i, adjustRankerVector[i].index, documents[adjustRankerVector[i].index].url, adjustRankerVector[i].signal, '\r\n');
+/*for(var i = 0; i < rankByAuthoScore.length; i++){
+	LogDebug(i, rankByAuthoScore[i].index, rankByAuthoScore[i].signal, '\r\n');
 }*/
+    //b. document rank position based on NewL3Score2
+    for(i = 0; i < top20doc; ++i){
+        rankByNewL3Score.push({index : i, signal : 1000.0 - i});
+    }
+    oriRankVector.sort(SortDescending);
+    for(i = 0; i < oriRankVector.length; ++i){
+        rankByNewL3Score[oriRankVector[i].index].signal = 1000.0 - rankVectorInOriPlace[i].index;
+    }
+    rankByNewL3Score.sort(SortDescending);
+
+for(var i = 0; i < rankByNewL3Score.length; i++){
+	var oripos = rankByNewL3Score[i].index;
+	LogDebug("rankByNewL3Score", i, rankByNewL3Score[i].index, documents[oripos].url, rankByNewL3Score[i].signal, '\r\n');
+}
     //----------------------------- Step4 Sorted document based on AuthorityScore and NewL3Score2 End ------------------------------
 //LogDebug("Step4 Sorted document based on AuthorityScore and NewL3Score2 End", '\r\n');
     //---------------------------- Step5 sorted final feature change Begin -------------------
@@ -2309,9 +2307,9 @@ LogDebug("adjustL3Ranker_oriRankerVector", oriPos, documents[oriPos].url, adjust
 //LogDebug("equalCount", equalCount, rankByNewL3Score, '\r\n');
 
     if(equalCount != 5){
-        for (i = 0; i < adjustRankerVector.length; ++i){
-LogDebug("documenstScore", adjustRankerVector[i].index, documents[adjustRankerVector[i].index].url, adjustRankerVector[i].signal, '\r\n');
-            documents[adjustRankerVector[i].index].score = adjustRankerVector[i].signal;
+        for (i = 0; i < oriRankVector.length; ++i){
+LogDebug("documenstScore", oriRankVector[i].index, documents[oriRankVector[i].index].url, 1000.0 - rankVectorInOriPlace[i].index, '\r\n');
+            documents[oriRankVector[i].index].score = 1000.0 - rankVectorInOriPlace[i].index;
         }
     }
     //---------------------------- Step5 sorted final feature change End -------------------
