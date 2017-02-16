@@ -41,7 +41,7 @@ intentMatchCondition[c_SubIntentId_LyricsSongLyricsArtist] = [0, 2, 0];
 
 
 var constraintMatchCondition = [];
-constraintMatchCondition[c_SubIntentId_LyricsSongLyrics] = [0, 1, 1, 1, 1]; 
+constraintMatchCondition[c_SubIntentId_LyricsSongLyrics] = [0, 2, 2, 2, 2]; 
 constraintMatchCondition[c_SubIntentId_LyricsSongLyricsArtist] = [0, 1, 1, 1, 1];
 
 //------------------------------------------------ DrugSideEffects Config - End ------------------------------------------------
@@ -196,7 +196,7 @@ function MSSFDecode(addQuery) {
     var otherSlots = [];
 
     var items = addQuery.split(",");
-//LogDebug("MSSFDecode", items, "->items\r\n"); // e.g. urlkeyword:,guarding:,intent:int_freedownload&download,officialsite:&,entity:next to you&1.0,constraint:justin beiber&&&,siteconstraint:,otherslots:^
+LogDebug("MSSFDecode", items,'\r\n', 'addQuery', addQuery,"\r\n"); // e.g. urlkeyword:,guarding:,intent:int_freedownload&download,officialsite:&,entity:next to you&1.0,constraint:justin beiber&&&,siteconstraint:,otherslots:^
     for (var i = 0, itemLen = items.length; i < itemLen; i++) {
 
         if (items[i] === "") {
@@ -753,11 +753,11 @@ function GenerateEntityMatchingScore(entityList, matchData) {
     var title = matchData.title;
     var wordFoundTitleArray = matchData.wordFoundTitleArray;
     var snippet = matchData.snippet;
-LogDebug("snippet", snippet, '\r\n');
     var wordFoundBodyArray = matchData.wordFoundBodyArray;
     for (var i = 0; i < entityCount; i++) {
         var entityItem = entityList[i];
         var entity = entityItem.text;
+//	LogDebug("760", entity, entityItem.score, "\r\n");
         if (entityItem.score >= 1.0) {
             if (entity.indexOf(' ') != -1) {
                 if (IsPhraseMatchForTitleSnippet(entity, title)) {
@@ -772,13 +772,13 @@ LogDebug("snippet", snippet, '\r\n');
                 else if (WordsFoundForTitleSnippet(entity, wordFoundBodyArray, snippet) == 1) {
                     entityMatchFeature += 250; //c_entityMatchScore_4th;
                 }
+//LogDebug("775", entityMatchFeature, '\r\n');
             }
             else {
                 if (WordsFoundForTitleSnippet(entity, wordFoundTitleArray, title) == 1) {
                     entityMatchFeature += 1000; //c_entityMatchScore_1st;
                 }
                 else if (WordsFoundForTitleSnippet(entity, wordFoundBodyArray, snippet) == 1) {
-    LogDebug("780", snippet, '\r\n');
                     entityMatchFeature += 750; //c_entityMatchScore_2nd;
                 }
             }
@@ -786,7 +786,7 @@ LogDebug("snippet", snippet, '\r\n');
         }
         else {
             entityMatchFeature += WordsFoundForTitleSnippet(entity, wordFoundTitleArray, title) * 1000.0;
-//			LogDebug("-3->",WordsFoundForTitleSnippet(entity, wordFoundTitleArray, title), "<-3-");
+//LogDebug("789", WordsFoundForTitleSnippet(entity, wordFoundTitleArray, title) * 1000.0, '\r\n');
         }
     }
 
@@ -1093,26 +1093,37 @@ function GenerateConstraintMatchingScore(constraintMatchConditionArray, constrai
     var consMatchFeature = 0;
     var hasOpposed = false;
     var consCount = constraintList.length;
-//LogDebug("1061consCount", consCount, '\r\n');
+//LogDebug("1061consCount", consCount, constraintList, '\r\n');
     for (var i = 0; i < consCount; i++) {
 //LogDebug("constraintList[i].original", i, constraintList[i].original, '\r\n') ;
         var consMatchForOne = CalculateConstraintMatchingScoreForSingleConstraint(constraintMatchConditionArray, constraintList[i], matchData, authorityScore, constraintMatchUrlScore, documentPosition);
-        consMatchFeature += consMatchForOne;
+LogDebug("1100",consMatchForOne, '\r\n');
+		if(consMatchForOne == c_constraintMatchScore_1st){
+				consMatchForOne += 0;
+		}
+		else if(consMatchForOne == c_constraintMatchScore_2nd){
+				consMatchForOne += 0;
+		}
+		else if(consMatchForOne == c_constraintMatchScore_3rd){
+				consMatchForOne += 400;
+		}
+		else if(consMatchForOne == c_constraintMatchScore_4th){
+				consMatchForOne += 400;
+		}
         if (consMatchForOne == 1) {
             hasOpposed = true;
         }
+		consMatchFeature += consMatchForOne;
     }
-
     if (hasOpposed) {
         consMatchFeature = 1;
     }
     else if (consCount !== 0) {
         consMatchFeature = consMatchFeature / consCount;
     }
-
+LogDebug("1113", consMatchFeature, '\r\n');
     return NormalizeConstraintMatchingScore(consMatchFeature);
 }
-
 function CalculateConstraintMatchingScoreForSingleConstraint(constraintMatchConditionArray, constraint, matchData, authorityScore, constraintMatchUrlScore, documentPosition) {
     if (IsNull(constraintMatchConditionArray) || constraintMatchConditionArray.length != 5) {
         return 0;
@@ -1141,9 +1152,14 @@ function CalculateConstraintMatchingScoreForSingleConstraint(constraintMatchCond
     var isConsOpposedMatchUrl;
 
     var isConsExcludeMatchBody;
+	
+	isConsOriMatchTitle = WordsFoundForTitleSnippet(consOri, wordFoundTitleArray, title) == 1;
+
+	isConsOriMatchUrl = IsPhraseMatchForUrl(consOri, url);
 
     //Verify whether is condition0 match
     var isCondition0Match = false;     //Opposed match
+//LogDebug("constraintMatchConditionArray[0]", constraintMatchConditionArray[0], '\r\n');
     switch (constraintMatchConditionArray[0]) {
         case 0:
             isCondition0Match = false;
@@ -1152,19 +1168,13 @@ function CalculateConstraintMatchingScoreForSingleConstraint(constraintMatchCond
             isCondition0Match = true;
             break;
         case 2:
-            if (IsNull(isConsOriMatchTitle)) {
-                isConsOriMatchTitle = WordsFoundForTitleSnippet(consOri, wordFoundTitleArray, title) == 1;
-            }
-            if (isConsOriMatchTitle) {
-                break;
-            }
-            if (IsNull(isConsOpposedMatchTitle)) {
-                isConsOpposedMatchTitle = IsArrayPhraseMatchForTitleSnippet(consOpposed, title);
-            }
-            if (isConsOpposedMatchTitle) {
+            if (isConsOpposedMatchTitle && !isConsOriMatchTitle) {
                 isCondition0Match = true;
             }
-            break;
+			if(isCondition0Match){
+				break;
+			}
+			break;
         case 3:
             if (IsNull(isConsOriMatchTitle)) {
                 isConsOriMatchTitle = WordsFoundForTitleSnippet(consOri, wordFoundTitleArray, title) == 1;
@@ -1202,6 +1212,7 @@ function CalculateConstraintMatchingScoreForSingleConstraint(constraintMatchCond
 
     //Verify whether is condition1 match
     var isCondition1Match = false;
+//LogDebug("constraintMatchConditionArray[1]", constraintMatchConditionArray[1], '\r\n');
     switch (constraintMatchConditionArray[1]) {
         case 0:
             isCondition1Match = false;
@@ -1210,23 +1221,11 @@ function CalculateConstraintMatchingScoreForSingleConstraint(constraintMatchCond
             isCondition1Match = true;
             break;
         case 2:
-            if (constraintMatchUrlScore != 1 && authorityScore != c_officialSiteScore) {
+            if ((isConsOriMatchTitle || isConsSynoMatchTitle) && (constraintMatchUrlScore == 1 || authorityScore == c_officialSiteScore)){
+				isCondition1Match = true;
                 break;
             }
-            if (IsNull(isConsOriMatchTitle)) {
-                isConsOriMatchTitle = WordsFoundForTitleSnippet(consOri, wordFoundTitleArray, title) == 1;
-            }
-            if (isConsOriMatchTitle) {
-                isCondition1Match = true;
-                break;
-            }
-            if (IsNull(isConsSynoMatchTitle)) {
-                isConsSynoMatchTitle = IsArrayPhraseMatchForTitleSnippet(consSyno, title);
-            }
-            if (isConsSynoMatchTitle) {
-                isCondition1Match = true;
-            }
-            break;
+			break;
         case 3:
             if (constraintMatchUrlScore != 1 && authorityScore != c_officialSiteScore) {
                 break;
@@ -1263,11 +1262,13 @@ function CalculateConstraintMatchingScoreForSingleConstraint(constraintMatchCond
             isCondition1Match = false;
             break;
     }
+//LogDebug("1269", isCondition1Match, c_constraintMatchScore_1st, '\r\n');
     if (isCondition1Match) {
         return c_constraintMatchScore_1st;
     }
 
     //Verify whether is condition2 match
+	isConsOriMatchBody = WordsFoundForTitleSnippet(consOri, wordFoundBodyArray, snippet) == 1;
     var isCondition2Match = false;
     switch (constraintMatchConditionArray[2]) {
         case 0:
@@ -1277,51 +1278,11 @@ function CalculateConstraintMatchingScoreForSingleConstraint(constraintMatchCond
             isCondition2Match = true;
             break;
         case 2:
-            if (constraintMatchUrlScore == 1 || authorityScore == c_officialSiteScore) {
-                if (IsNull(isConsOpposedMatchTitle)) {
-                    isConsOpposedMatchTitle = IsArrayPhraseMatchForTitleSnippet(consOpposed, title);
-                }
-                if (isConsOpposedMatchTitle) {
-                    break;
-                }
-                if (IsNull(isConsExcludeMatchBody)) {
-                    isConsExcludeMatchBody = IsArrayPhraseMatchForTitleSnippet(consExclude, snippet);
-                }
-                if (isConsExcludeMatchBody) {
-                    break;
-                }
-                if (IsNull(isConsOriMatchBody)) {
-                    isConsOriMatchBody = WordsFoundForTitleSnippet(consOri, wordFoundBodyArray, snippet) == 1;
-                }
-                if (isConsOriMatchBody) {
-                    isCondition2Match = true;
-                    break;
-                }
-                if (IsNull(isConsSynoMatchBody)) {
-                    isConsSynoMatchBody = IsArrayPhraseMatchForTitleSnippet(consSyno, snippet);
-                }
-                if (isConsSynoMatchBody) {
-                    isCondition2Match = true;
-                    break;
-                }
-            }
-            else if (constraintMatchUrlScore == 2) {
-                if (IsNull(isConsOriMatchTitle)) {
-                    isConsOriMatchTitle = WordsFoundForTitleSnippet(consOri, wordFoundTitleArray, title) == 1;
-                }
-                if (isConsOriMatchTitle) {
-                    isCondition2Match = true;
-                    break;
-                }
-                if (IsNull(isConsSynoMatchTitle)) {
-                    isConsSynoMatchTitle = IsArrayPhraseMatchForTitleSnippet(consSyno, title);
-                }
-                if (isConsSynoMatchTitle) {
-                    isCondition2Match = true;
-                    break;
-                }
-            }
-            break;
+			if(((isConsOriMatchBody || isConsSynoMatchBody) && IsNull(isConsOpposedMatchTitle) &&  IsNull(isConsExcludeMatchBody) && (constraintMatchUrlScore == 1 || authorityScore == c_officialSiteScore))|| ((isConsOriMatchTitle || isConsSynoMatchTitle) && constraintMatchUrlScore == 2)){
+				isCondition2Match = true;
+                break;
+			}
+			break;
         case 3:
             if (constraintMatchUrlScore == 1 || authorityScore == c_officialSiteScore) {
                 if (IsNull(isConsOpposedMatchTitle)) {
@@ -1406,23 +1367,11 @@ function CalculateConstraintMatchingScoreForSingleConstraint(constraintMatchCond
             isCondition3Match = true;
             break;
         case 2:
-            if (documentPosition >= 5) {
+			if((isConsOriMatchTitle || isConsSynoMatchTitle) && documentPosition < c_officialSiteScore){
+				isCondition3Match = true;
                 break;
-            }
-            if (IsNull(isConsOriMatchTitle)) {
-                isConsOriMatchTitle = WordsFoundForTitleSnippet(consOri, wordFoundTitleArray, title) == 1;
-            }
-            if (isConsOriMatchTitle) {
-                isCondition3Match = true;
-                break;
-            }
-            if (IsNull(isConsSynoMatchTitle)) {
-                isConsSynoMatchTitle = IsArrayPhraseMatchForTitleSnippet(consSyno, title);
-            }
-            if (isConsSynoMatchTitle) {
-                isCondition3Match = true;
-            }
-            break;
+			}
+			break;
         case 3:
             if (documentPosition >= 5) {
                 break;
@@ -1472,35 +1421,10 @@ function CalculateConstraintMatchingScoreForSingleConstraint(constraintMatchCond
             isCondition4Match = true;
             break;
         case 2:
-            if (documentPosition >= 5) {
+			if((isConsOriMatchBody || isConsSynoMatchBody) && IsNull(isConsOpposedMatchTitle) && IsNull(isConsExcludeMatchBody) && documentPosition < c_officialSiteScore){
+				isCondition4Match = true;
                 break;
-            }
-            if (IsNull(isConsOpposedMatchTitle)) {
-                isConsOpposedMatchTitle = IsArrayPhraseMatchForTitleSnippet(consOpposed, title);
-            }
-            if (isConsOpposedMatchTitle) {
-                break;
-            }
-            if (IsNull(isConsExcludeMatchBody)) {
-                isConsExcludeMatchBody = IsArrayPhraseMatchForTitleSnippet(consExclude, snippet);
-            }
-            if (isConsExcludeMatchBody) {
-                break;
-            }
-            if (IsNull(isConsOriMatchBody)) {
-                isConsOriMatchBody = WordsFoundForTitleSnippet(consOri, wordFoundBodyArray, snippet) == 1;
-            }
-            if (isConsOriMatchBody) {
-                isCondition4Match = true;
-                break;
-            }
-            if (IsNull(isConsSynoMatchBody)) {
-                isConsSynoMatchBody = IsArrayPhraseMatchForTitleSnippet(consSyno, snippet);
-            }
-            if (isConsSynoMatchBody) {
-                isCondition4Match = true;
-                break;
-            }
+			}
             break;
         case 3:
             if (documentPosition >= 5) {
@@ -1725,17 +1649,6 @@ function NormalizeConstraintThreshold(score){
 }
 
 
-function GenerateThresholdScore(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArray, intentMatchCondition, constraintMatchCondition, documentsLocal, top20doc, keyFeaturesOfDocuments) {
-    var i, curDoc, featureVector, matchData, url;
-    var entityMatchScoreArray = new Array(0, 0);//score of top3 doc
-    var entityMatchScoreThreshold = 0;
-    var entityMatchingScorePosTop1 = 0;
-    var isTrigger = true;
-    var drEntityScoreArray = new Array(20);
-
-
-}
-
 function GenerateConstrainThresholdScore(matchDataArray, documentsLocal, top20doc, keyFeaturesOfDocuments) {
     var curDoc, featureVector, matchData, url;
 
@@ -1821,21 +1734,10 @@ function NormalizeIntentThreshold(score){
     return score_normalize;
 }
 
-
-function GenerateThresholdScore(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArray, intentMatchCondition, constraintMatchCondition, documentsLocal, top20doc, keyFeaturesOfDocuments) {
-    var i, curDoc, featureVector, matchData, url;
-    var entityMatchScoreArray = new Array(0, 0);//score of top3 doc
-    var entityMatchScoreThreshold = 0;
-    var entityMatchingScorePosTop1 = 0;
-    var isTrigger = true;
-    var drEntityScoreArray = new Array(20);
-
-}
-
 function NormalizeEntityThreshold(score){
     var score_normalize = 0;
     if (score >= 875){
-        scorecormalize = 1000;
+        score_normalize = 1000;
     }
     else if(score >= 625){
         score_normalize = 750;
@@ -1894,7 +1796,6 @@ function GenerateThresholdScore(subIntentId, subIntentScore, MSSFDecodeResult, m
 
         //Generate Threshold_FastBrain
         weightScore_fastBrain_entity += entityMatchScore * onlineMemoryUrlFeature_i;
-LogDebug("1814", url, entityMatchScore, onlineMemoryUrlFeature_i, "\r\n");
         weightScore_fastBrain_intent += intentMatchScore * onlineMemoryUrlFeature_i;
         sum_onlineMemoryUrlFeature += onlineMemoryUrlFeature_i;
 
@@ -1934,12 +1835,12 @@ LogDebug("1814", url, entityMatchScore, onlineMemoryUrlFeature_i, "\r\n");
     }
     threshold_top_entity = threshold_top_entity / 5.0;
     threshold_top_intent = threshold_top_intent / 5.0;
-LogDebug("\t3-->generateEntityThresholdScore", threshold_top_entity, "<--\t");
     //Generate final threshold of entity/intent/constraint
     var threshold_final_entity = GenerateNumNoZero(threshold_top_entity, weightScore_thresholdBingClick_entity, weightScore_fastBrain_entity);
     var threshold_final_intent = GenerateNumNoZero(threshold_top_intent, weightScore_thresholdBingClick_intent, weightScore_fastBrain_intent);
-
+	
     var threshold_final = new Array(2);
+	LogDebug("proNormalizeEnity", threshold_final_entity, '\r\n');
     threshold_final[0] = NormalizeEntityThreshold(threshold_final_entity);
     //threshold_final[1] = threshold_final_intent;
     threshold_final[1] = NormalizeIntentThreshold(threshold_top_intent);
@@ -2005,11 +1906,14 @@ function RankerCondition1(top20doc,keyFeaturesOfDocuments, entityMatchThreshold,
         matchData = matchDataArray[i];
         url = matchData.url;
         authorityScore = keyFeaturesOfDocuments[i].authorityScore;
-        constraintMatchUrlScore = PEConstraintScoreDecode(rerankFeatures[c_FeatureId_PEScoreConstraint], MSSFDecodeResult.urlKeyword, url, rerankFeatures[c_FeatureId_UrlDepth]);
+        constraintMatchUrlScore = 0; //PEConstraintScoreDecode(rerankFeatures[c_FeatureId_PEScoreConstraint], MSSFDecodeResult.urlKeyword, url, rerankFeatures[c_FeatureId_UrlDepth]);
+		if (authorityScore > 0) {
+			constraintMatchUrlScore = 1;
+		}
         constraintMatchScore = GenerateConstraintMatchingScore(constraintMatchCondition, MSSFDecodeResult.constraint, matchData, authorityScore, constraintMatchUrlScore, i);
+LogDebug("constraintMatchScore", url, constraintMatchScore, '\r\n');
         keyFeaturesOfDocuments[i].constraintMatchScore = constraintMatchScore;
         top5ConstraintMatchSum += constraintMatchScore;
-LogDebug("consmatchScore",url, constraintMatchScore, '\r\n');
     }
     if(top5ConstraintMatchSum != 0){
         return true;
@@ -2156,10 +2060,10 @@ for(var j = 0; j < top20doc; j++) {
 		matchData = matchDataArray[i];
         featureVector = curDoc.rerankfeatures;
         url = matchData.url;
-//LogDebug("\turlBegin:", url, 'urlEnd\t');
+LogDebug("\turlBegin:", url, 'urlEnd\t');
         if (i == 0){
             var entityMatchScore = GenerateEntityMatchingScore(MSSFDecodeResult.entity, matchData);//feature:entity, matchData Contain the feature "NumberOfOccurrences_MultiInstanceTitle_0, ... , NumberOfOccurrences_MultiInstanceTitle_7"
-//LogDebug("entityMatchScoreBegin", i, entityMatchScore, 'entityMatchScoreEnd', '\r\n');
+LogDebug("entityMatchScoreBegin",entityMatchScore, 'entityMatchScoreEnd', '\r\n');
 //LogDebug("featureVector[c_FeatureId_PEScoreTopSite]", featureVector[c_FeatureId_PEScoreTopSite], '\r\n');
             topSiteScoreResult = PETopSiteScoreDecode(featureVector[c_FeatureId_PEScoreTopSite], MSSFDecodeResult.urlKeyword, url, featureVector[c_FeatureId_UrlDepth]);
 //LogDebug("TopSiteScoreDecode", topSiteScoreResult.authorityScore, '\r\n');
@@ -2192,7 +2096,7 @@ for(var j = 0; j < top20doc; j++) {
         if (i > 0)
         {
             var entityMatchScore = GenerateEntityMatchingScore(MSSFDecodeResult.entity, matchData);//feature:entity, matchData Contain the feature "NumberOfOccurrences_MultiInstanceTitle_0, ... , NumberOfOccurrences_MultiInstanceTitle_7"
-//LogDebug("entityMatchScoreBegin", i, entityMatchScore, 'entityMatchScoreEnd ', '\r\n');
+LogDebug("entityMatchScoreBegin", entityMatchScore, 'entityMatchScoreEnd ', '\r\n');
 //LogDebug("featureVector[c_FeatureId_PEScoreTopSite]", featureVector[c_FeatureId_PEScoreTopSite], '\r\n');
             topSiteScoreResult = PETopSiteScoreDecode(featureVector[c_FeatureId_PEScoreTopSite], MSSFDecodeResult.urlKeyword, url, featureVector[c_FeatureId_UrlDepth]);
 //LogDebug("TopSiteScoreDecode", topSiteScoreResult.authorityScore, '\r\n');
@@ -2270,9 +2174,9 @@ LogDebug("intentMatchThresholdBegin", intentMatchThreshold, "intentMatchThreshol
         documentPosition = rankVector[i].index;
         //var currentHostId = documentsLocal[rankVector[i].index].hostid;
 		var currentHostId = curRerankFeatures[28];
-LogDebug("RankerCondition1ParametersList", top20doc,keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, "top1EntityMatch", top1EntityMatch, drScoreTop1EntityMatch, top1IntentMatch, drScoreTop1IntentMatch, constraintMatchCondition, "MSSFDecodeResult", MSSFDecodeResult, matchDataArray, curRerankFeatures, '\r\n');
+//LogDebug("RankerCondition1ParametersList", top20doc,keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, "top1EntityMatch", top1EntityMatch, drScoreTop1EntityMatch, top1IntentMatch, drScoreTop1IntentMatch, constraintMatchCondition, "MSSFDecodeResult", MSSFDecodeResult, matchDataArray, curRerankFeatures, '\r\n');
         if(RankerCondition1(top20doc,keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, top1EntityMatch, drScoreTop1EntityMatch, top1IntentMatch, drScoreTop1IntentMatch, constraintMatchCondition, MSSFDecodeResult, matchDataArray, curRerankFeatures )){
-LogDebug("RankerCondition1 Satisfied", '\r\n');
+//LogDebug("RankerCondition1 Satisfied", '\r\n');
 			if(!constrainMatchFinish) {
 				MSSFDecodeResult = PostWebSlotTagging(MSSFDecodeResult, canonicalQuery, matchDataArray);
 				top5ConstraintMatchSum = GenerateTop20DocConstraintMatchingScore(top20doc, matchDataArray, keyFeaturesOfDocuments, MSSFDecodeResult, documentsLocal, constraintMatchCondition);
@@ -2403,10 +2307,14 @@ function GenerateTop20DocConstraintMatchingScore(top20doc, matchDataArray, keyFe
 		var url = matchData.url;
 		var rerankFeatures = documentsLocal[i].rerankfeatures;
 		var authorityScore = keyFeaturesOfDocuments[i].authorityScore;
-		var constraintMatchUrlScore = PEConstraintScoreDecode(rerankFeatures[c_FeatureId_PEScoreConstraint], MSSFDecodeResult.urlKeyword, url, rerankFeatures[c_FeatureId_UrlDepth]);
+		var constraintMatchUrlScore = 0;//PEConstraintScoreDecode(rerankFeatures[c_FeatureId_PEScoreConstraint], MSSFDecodeResult.urlKeyword, url, rerankFeatures[c_FeatureId_UrlDepth]);
+		if (authorityScore > 0){
+			constraintMatchUrlScore = 1;
+		}
+//LogDebug("2387", url, constraintMatchUrlScore, '\r\n');
 		var constraintMatchScore = GenerateConstraintMatchingScore(constraintMatchCondition, MSSFDecodeResult.constraint, matchData, authorityScore, constraintMatchUrlScore, i);
 		keyFeaturesOfDocuments[i].constraintMatchScore = constraintMatchScore;
-LogDebug("contraintScore", i, constraintMatchScore, '\r\n');
+LogDebug("constraintScore", url, constraintMatchScore, '\r\n');
 		if(i < 5){
 			top5ConstraintMatchSum += constraintMatchScore;
 		}
@@ -2636,16 +2544,16 @@ function WordsFoundForTitleSnippet(phrase, wordFoundArray, stream) {
             if (wordFoundArray[termIndex] > 0) {
                 matchedCount++;
             }
-//LogDebug("32555", term, termIndex, wordFoundArray, wordFoundArray[termIndex], '\r\n');
+//LogDebug("2618", term, termIndex, wordFoundArray[termIndex], matchedCount, '\r\n');
         }
         else {
             if (IsPhraseMatchForTitleSnippet(term, stream)) {
-                LogDebug("42559termMatchSnippet", term, "termFoundIntitle", '\r\n');
+//LogDebug("2622termMatchSnippet", term, "termFoundIntitle", '\r\n');
                 matchedCount++;
             }
         }
     }
-//LogDebug("2564matchedCount", matchedCount, '\r\n');
+//LogDebug("2564matchedCount", matchedCount, phraseWords.length, '\r\n');
     termMatchedRatio = matchedCount * 1.0 / phraseWords.length;
     return termMatchedRatio;
 }
