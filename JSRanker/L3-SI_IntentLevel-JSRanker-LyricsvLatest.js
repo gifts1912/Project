@@ -141,7 +141,7 @@ LogDebug("query", query, '\r\n');
     for (var i = 0, len = queryTermArray.length; i < len; i++) {
         var term = queryTermArray[i];
         if (IsNull(queryTermDict[term])) {
-LogDebug("queryTermDic", term, i, '\r\n')
+LogDebug("queryTermDic", term, i, '\r\n');
             queryTermDict[term] = i;
         }
     }
@@ -392,7 +392,7 @@ function PostWebSlotTagging(MSSFDecodeResult, canonicalQuery, matchDataArray) {
         termArray = MSSFDecodeResult.entity[i].text.split(' ');
         for (j = 0, termCount = termArray.length; j < termCount; j++) {
             code = GenerateHashCode(termArray[j]);
-//LogDebug("entityTerm", termArray[j], '\r\n');
+LogDebug("entityTerm", termArray[j], '\r\n');
             filterTermDict[code] = 1;
         }
     }
@@ -400,13 +400,13 @@ function PostWebSlotTagging(MSSFDecodeResult, canonicalQuery, matchDataArray) {
         termArray = MSSFDecodeResult.otherIntents[i].span.toString().split(' ');
         for (j = 0, termCount = termArray.length; j < termCount; j++) {
             code = GenerateHashCode(termArray[j]);
-//LogDebug("intentTerm", termArray[j], '\r\n');
+LogDebug("intentTerm", termArray[j], '\r\n');
             filterTermDict[code] = 1;
         }
     }
 	if (!IsNull(MSSFDecodeResult.majorIntent)) {
 		var majorIntent = MSSFDecodeResult.majorIntent.span;
-	//LogDebug("majorIntent", majorIntent, '\r\n');
+LogDebug("majorIntent", majorIntent, '\r\n');
 		termArray = majorIntent.toString().split(' ');
 		for (j = 0, termCount = termArray.length; j < termCount; j++) {
 			code = GenerateHashCode(termArray[j]);
@@ -453,10 +453,10 @@ function PostWebSlotTagging(MSSFDecodeResult, canonicalQuery, matchDataArray) {
 			}
 			code = GenerateHashCode(keyTerm);
 			canonicalTermDic[code] = termArray;
-	//LogDebug("res", i, res[i].replace(/word:\(([^\)]+)\)/g, "$1"), '\r\n');
+LogDebug("res", i, res[i].replace(/word:\(([^\)]+)\)/g, "$1"), '\r\n');
 		}
 	}
-	
+LogDebug("459", '\r\n');	
 	var rawquery = canonicalQuery.replace(/word:\((\w+)[^\)]+\)/g, "$1");
     var candidateListTemp = rawquery.split(' ');
     var candidateListPre = [];
@@ -464,7 +464,7 @@ function PostWebSlotTagging(MSSFDecodeResult, canonicalQuery, matchDataArray) {
         var candidate = candidateListTemp[i];
         if (candidate !== "" && IsNull(filterTermDict[GenerateHashCode(candidate)])) {
 			//code = GenerateHashCode(candidate);
-            candidateListPre.push(candidate));
+            candidateListPre.push(candidate);
 LogDebug("468", candidate, '\r\n');
         }
     }
@@ -473,6 +473,7 @@ LogDebug("468", candidate, '\r\n');
     var drScoreTop1MatchData = matchDataArray[0];
     var top1MatchData = matchDataArray[0];
 	var ngramList = GetNgrams(candidateListPre, 4);
+LogDebug("476", ngramList,'\r\n');
 	var candidateList = [];
 	for(i = 0, len = ngramList.length; i < len; i++){
 		var ngram = ngramList[i];
@@ -500,7 +501,7 @@ LogDebug("468", candidate, '\r\n');
             curCandTerm = curCandidate.term;
 			
 			 var isCandidateMatchTitle = WordsFoundForTitleSnippet(curCandTerm, matchData.wordFoundTitleArray, matchData.title) == 1;
-//LogDebug("matchData.wordFoundTitleArray", matchData.wordFoundTitleArray, '\r\n');
+LogDebug("matchData.wordFoundTitleArray", matchData.wordFoundTitleArray, '\r\n');
             var isCandidateMatchSnippet = WordsFoundForTitleSnippet(curCandTerm, matchData.wordFoundBodyArray, matchData.snippet) == 1;
 			/*if(!isCandidateMatchTitle || !isCandidateMatchSnippet){
 				code = GenerateHashCode(curCandTerm);
@@ -518,8 +519,8 @@ LogDebug("468", candidate, '\r\n');
 					}
 				}
 			}*/
-//LogDebug("matchData.title and snippet", matchData.title, '\r\n', 'snippet', matchData.snippet, '\r\n');
-//LogDebug("isCandidateMatchTitle&Snippet",matchData.url, curCandTerm, isCandidateMatchTitle, isCandidateMatchSnippet, '\r\n');
+LogDebug("matchData.title and snippet", matchData.title, '\r\n', 'snippet', matchData.snippet, '\r\n');
+LogDebug("isCandidateMatchTitle&Snippet",matchData.url, curCandTerm, isCandidateMatchTitle, isCandidateMatchSnippet, '\r\n');
 			if (isCandidateMatchTitle) {
                 if (i < 5) {
                     curCandidate.titleTop5Count++;
@@ -549,6 +550,7 @@ LogDebug("468", candidate, '\r\n');
 			constraintPreFilter.push(curCandidate);
         }
     }
+LogDebug("553", '\r\n');
 	constraintPreFilter.sort(SortByItemStringLength);
 	for (j = 0, len = constraintPreFilter.length; j < len; j++){
 		curCandidate = constraintPreFilter[j];
@@ -1144,11 +1146,11 @@ function GenerateConstraintMatchingScore(constraintMatchConditionArray, constrai
     var consMatchFeature = 0;
     var hasOpposed = false;
     var consCount = constraintList.length;
-LogDebug("1061consCount", consCount, constraintList, '\r\n');
+//LogDebug("1061consCount", consCount, constraintList, '\r\n');
     for (var i = 0; i < consCount; i++) {
-LogDebug("constraintList[i].original", i, constraintList[i].original, '\r\n') ;
+//LogDebug("constraintList[i].original", i, constraintList[i].original, '\r\n') ;
         var consMatchForOne = CalculateConstraintMatchingScoreForSingleConstraint(constraintMatchConditionArray, constraintList[i], matchData, authorityScore, constraintMatchUrlScore, documentPosition);
-LogDebug("1100",consMatchForOne, '\r\n');
+//LogDebug("1100",consMatchForOne, '\r\n');
 		if(consMatchForOne == c_constraintMatchScore_1st){
 				consMatchForOne += 0;
 		}
@@ -1172,7 +1174,7 @@ LogDebug("1100",consMatchForOne, '\r\n');
     else if (consCount !== 0) {
         consMatchFeature = consMatchFeature / consCount;
     }
-LogDebug("1113", consMatchFeature, '\r\n');
+//LogDebug("1113", consMatchFeature, '\r\n');
     return NormalizeConstraintMatchingScore(consMatchFeature);
 }
 function CalculateConstraintMatchingScoreForSingleConstraint(constraintMatchConditionArray, constraint, matchData, authorityScore, constraintMatchUrlScore, documentPosition) {
@@ -1207,7 +1209,7 @@ function CalculateConstraintMatchingScoreForSingleConstraint(constraintMatchCond
 	isConsOriMatchTitle = WordsFoundForTitleSnippet(consOri, wordFoundTitleArray, title) == 1;
 
 	isConsOriMatchUrl = IsPhraseMatchForUrl(consOri, url);
-LogDebug("isConsOriMatchTitle&Url", isConsOriMatchTitle, isConsOriMatchUrl, '\r\n');
+//LogDebug("isConsOriMatchTitle&Url", isConsOriMatchTitle, isConsOriMatchUrl, '\r\n');
     //Verify whether is condition0 match
     var isCondition0Match = false;     //Opposed match
 //LogDebug("constraintMatchConditionArray[0]", constraintMatchConditionArray[0], '\r\n');
@@ -1951,7 +1953,7 @@ function RankerCondition1(top20doc,keyFeaturesOfDocuments, entityMatchThreshold,
 //LogDebug("RankerCondition1->3.5", '\r\n');
         return true;
     }
-//LogDebug("RankerCondition1->4", '\r\n');
+LogDebug("RankerCondition1->4", '\r\n');
     var top5ConstraintMatchSum = 0, matchData, url, authorityScore, constraintMatchUrlScore, constraintMatchScore;
     for (i = 0; i < Math.min(top20doc, 5); ++i) {
         matchData = matchDataArray[i];
@@ -1962,7 +1964,7 @@ function RankerCondition1(top20doc,keyFeaturesOfDocuments, entityMatchThreshold,
 			constraintMatchUrlScore = 1;
 		}
         constraintMatchScore = GenerateConstraintMatchingScore(constraintMatchCondition, MSSFDecodeResult.constraint, matchData, authorityScore, constraintMatchUrlScore, i);
-//LogDebug("constraintMatchScore", url, constraintMatchScore, '\r\n');
+LogDebug("constraintMatchScore", url, constraintMatchScore, '\r\n');
         keyFeaturesOfDocuments[i].constraintMatchScore = constraintMatchScore;
         top5ConstraintMatchSum += constraintMatchScore;
     }
@@ -2092,9 +2094,10 @@ for(var j = 0; j < top20doc; j++) {
     var maxDRScorePosTemp = 100;
 
     rankScoreVector.sort(SortNumberDRScoreDesc);
-    var thresholdPos = Math.min(15, top20doc) - 1;
+    var thresholdPos = Math.min(15, top20doc);
     var oriPos = rankScoreVector[thresholdPos].oriIndex;
-//LogDebug("oriPos of rankScoreVector_15th", oriPos, '\r\n');
+	drScoreThreshold = rankScoreVector[thresholdPos].drScore;
+LogDebug("oriPos of rankScoreVector_15th", oriPos,drScoreThreshold , '\r\n');
     var maxDRScorePos = 0;
     var top1EntityMatch = 0;
     var top1IntentMatch = 0;
@@ -2135,10 +2138,6 @@ LogDebug("entityMatchScoreBegin",entityMatchScore, 'entityMatchScoreEnd', '\r\n'
             sumIntentMatchTop5 += intentMatchScore;
         }
         curDRScore = curDoc.l2score;
-        if (i == oriPos){
-            drScoreThreshold = curDRScore;
-//LogDebug("drScoreThreshold", drScoreThreshold, '\r\n');
-        }
         if(i < Math.min(10, top20doc) && curDRScore == maxDRScore) {
             if (maxDRScorePosTemp > i) {
                 maxDRScorePosTemp = i;
@@ -2227,7 +2226,7 @@ LogDebug("intentMatchThresholdBegin", intentMatchThreshold, "intentMatchThreshol
 		var currentHostId = curRerankFeatures[28];
 //LogDebug("RankerCondition1ParametersList", top20doc,keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, "top1EntityMatch", top1EntityMatch, drScoreTop1EntityMatch, top1IntentMatch, drScoreTop1IntentMatch, constraintMatchCondition, "MSSFDecodeResult", MSSFDecodeResult, matchDataArray, curRerankFeatures, '\r\n');
         if(RankerCondition1(top20doc,keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, top1EntityMatch, drScoreTop1EntityMatch, top1IntentMatch, drScoreTop1IntentMatch, constraintMatchCondition, MSSFDecodeResult, matchDataArray, curRerankFeatures )){
-//LogDebug("RankerCondition1 Satisfied", '\r\n');
+LogDebug("RankerCondition1 Satisfied", '\r\n');
 			if(!constrainMatchFinish) {
 				MSSFDecodeResult = PostWebSlotTagging(MSSFDecodeResult, canonicalQuery, matchDataArray);
 				top5ConstraintMatchSum = GenerateTop20DocConstraintMatchingScore(top20doc, matchDataArray, keyFeaturesOfDocuments, MSSFDecodeResult, documentsLocal, constraintMatchCondition);
@@ -2272,7 +2271,7 @@ LogDebug("ConstrainMatchTrehsold", constraintMatchThreshold, '\r\n');
     }
     rankVector.sort(SortDescending);
 for(i = 0; i < rankVector.length; i++){
-	LogDebug("rankVector", rankVector[i].index, rankVector[i].signal, '\r\n');
+	LogDebug("rankVector", documents[rankVector[i].index].url, rankVector[i].signal, 1000.0 - rankVectorInOriPlace[i].index, '\r\n');
 }
     //---- rankScoreVector store score feature newL3Score2 ----
    /* for(i = 0; i < rankDocLength; ++i){
@@ -2309,7 +2308,7 @@ for(var i = 0; i < adjustRankerVector.length; ++i){
 LogDebug("RankerByNewL3Score", i, adjustRankerVector[i].index, documents[oriPos].url, adjustRankerVector[i].signal, '\r\n');
 }
    
-LogDebug("posby0", posby0, '\r\n');
+//LogDebug("posby0", posby0, '\r\n');
     if(posby0 >= 8 || adjustCondition1(rankScoreVector, documentsLocal)){
 LogDebug('adjustCondition1Satisfy', '\r\n');
         for(var j = 0; j < top20doc; ++j){
@@ -2362,10 +2361,10 @@ function GenerateTop20DocConstraintMatchingScore(top20doc, matchDataArray, keyFe
 		if (authorityScore > 0){
 			constraintMatchUrlScore = 1;
 		}
-LogDebug("2387", url, constraintMatchCondition, MSSFDecodeResult.constraint, '\r\n', matchData, authorityScore, constraintMatchUrlScore, i, '\r\n');
+//LogDebug("2387", url, constraintMatchCondition, MSSFDecodeResult.constraint, '\r\n', matchData, authorityScore, constraintMatchUrlScore, i, '\r\n');
 		var constraintMatchScore = GenerateConstraintMatchingScore(constraintMatchCondition, MSSFDecodeResult.constraint, matchData, authorityScore, constraintMatchUrlScore, i);
 		keyFeaturesOfDocuments[i].constraintMatchScore = constraintMatchScore;
-LogDebug("constraintScore", url, constraintMatchScore, '\r\n');
+//LogDebug("constraintScore", url, constraintMatchScore, '\r\n');
 		if(i < 5){
 			top5ConstraintMatchSum += constraintMatchScore;
 		}
@@ -2405,14 +2404,14 @@ function IsGuard(keyFeatures, rerankFeatures, documentPosition, entityMatchScore
     }
 
     var con2 = false;
-//LogDebug("entityscore and threshold", keyFeatures.entityMatchScore, entityMatchScoreThreshold, '\r\n');
-//LogDebug("intentScore", keyFeatures.intentMatchScore, keyFeatures.constraintMatchScore, c_constraintMatchScoreOpposed, '\r\n');
-//LogDebug("qualityguardingconsMatchDomain", keyFeatures.lowQualitySiteScore, keyFeatures.guardingScore, isSiteConsMatchDomain, '\r\n');
+if (documentPosition < 5) {
+LogDebug("2413", documents[documentPosition].url, keyFeatures.guardingScore, isSiteConsMatchDomain, keyFeatures.lowQualitySiteScore, keyFeatures.entityMatchScore, keyFeatures.intentMatchScore, keyFeatures.constraintMatchScore,'\r\n');
+}
     if(documentPosition < 5 && keyFeatures.entityMatchScore >= entityMatchScoreThreshold && keyFeatures.intentMatchScore == 0 && keyFeatures.constraintMatchScore != c_constraintMatchScoreOpposed && keyFeatures.lowQualitySiteScore != 1 && (keyFeatures.guardingScore == 1000 || isSiteConsMatchDomain == 1000)){
         con2 = true;
     }
     var con3 = false;
-//LogDebug("sumIntentMatchTop5", sumIntentMatchTop5, '\r\n');
+LogDebug("sumIntentMatchTop5", sumIntentMatchTop5, '\r\n');
     if(keyFeatures.guardingScore != 1000 && !(sumIntentMatchTop5 > 0 && con2)){
         con3 = true;
     }
