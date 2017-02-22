@@ -1146,9 +1146,8 @@ function GenerateConstraintMatchingScore(constraintMatchConditionArray, constrai
     var consMatchFeature = 0;
     var hasOpposed = false;
     var consCount = constraintList.length;
-//LogDebug("1061consCount", consCount, constraintList, '\r\n');
     for (var i = 0; i < consCount; i++) {
-//LogDebug("constraintList[i].original", i, constraintList[i].original, '\r\n') ;
+//LogDebug("[i].original", i, constraintList[i].original, '\r\n') ;
         var consMatchForOne = CalculateConstraintMatchingScoreForSingleConstraint(constraintMatchConditionArray, constraintList[i], matchData, authorityScore, constraintMatchUrlScore, documentPosition);
 //LogDebug("1100",consMatchForOne, '\r\n');
 		if(consMatchForOne == c_constraintMatchScore_1st){
@@ -1920,19 +1919,19 @@ function GenerateDRScoreRank(curDRScore, l3Threshold, l2Threshold, l1Threshold) 
     return 0;
 }
 
-function RankerCondition1(top20doc,keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, top1EntityMatch,drScoreTop1EntityMatch, top1IntentMatch, drScoreTop1IntentMatch, constraintMatchCondition, MSSFDecodeResult, matchDataArray, rerankFeatures ){
+function RankerCondition1(top20doc,keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, top1EntityMatch,drScoreTop1EntityMatch, top1IntentMatch, drScoreTop1IntentMatch, constraintMatchCondition, MSSFDecodeResult, matchDataArray, rerankFeatures){
+
     if(!((entityMatchThreshold > 250) && (top1EntityMatch >= entityMatchThreshold) && (drScoreTop1EntityMatch >= entityMatchThreshold) && (top1IntentMatch >= intentMatchThreshold) && (drScoreTop1IntentMatch >= intentMatchThreshold))) {
         return false;
     }
     var top5EntityIntentASCount = 0;
     var top8EntityIntentASCount = 0;
     var top5IntentMatchSum = 0;
-
+//LogDebug("1930", url, '\r\n');
     for (i = 0; i < Math.min(top20doc, 8); ++i) {
         var curEntityScore = keyFeaturesOfDocuments[i].entityMatchScore;
         var curIntentScore = keyFeaturesOfDocuments[i].intentMatchScore;
         var curAuthorityScore = keyFeaturesOfDocuments[i].authorityScore;
-//LogDebug("RankerCondition1->1.5", i, curEntityScore, curIntentScore, curAuthorityScore, '\r\n');
         if ((i < 5) && (curEntityScore >= entityMatchThreshold) && (curIntentScore >= intentMatchThreshold) && (curAuthorityScore > 0)) {
             top5EntityIntentASCount++;
             top8EntityIntentASCount++;
@@ -1942,18 +1941,14 @@ function RankerCondition1(top20doc,keyFeaturesOfDocuments, entityMatchThreshold,
             top8EntityIntentASCount++;
         }
     }
-//LogDebug("RankerCondition1->2", '\r\n');
-//LogDebug("RankerCondition1->2.5", top5EntityIntentASCount, top8EntityIntentASCount, "\r\n"); 
+//LogDebug("1944", url, top5IntentMatchSum, top5EntityIntentASCount, top8EntityIntentASCount, '\r\n');
     if(!(top5EntityIntentASCount >= 2 || top8EntityIntentASCount >= 4)) {
         return false;
     }
-
-//LogDebug("RankerCondition1->3", '\r\n');
     if(top5IntentMatchSum != 0) {
-//LogDebug("RankerCondition1->3.5", '\r\n');
         return true;
     }
-LogDebug("RankerCondition1->4", '\r\n');
+
     var top5ConstraintMatchSum = 0, matchData, url, authorityScore, constraintMatchUrlScore, constraintMatchScore;
     for (i = 0; i < Math.min(top20doc, 5); ++i) {
         matchData = matchDataArray[i];
@@ -1964,10 +1959,10 @@ LogDebug("RankerCondition1->4", '\r\n');
 			constraintMatchUrlScore = 1;
 		}
         constraintMatchScore = GenerateConstraintMatchingScore(constraintMatchCondition, MSSFDecodeResult.constraint, matchData, authorityScore, constraintMatchUrlScore, i);
-LogDebug("constraintMatchScore", url, constraintMatchScore, '\r\n');
         keyFeaturesOfDocuments[i].constraintMatchScore = constraintMatchScore;
         top5ConstraintMatchSum += constraintMatchScore;
     }
+//LogDebug("1965", url, top5ConstraintMatchSum, '\r\n');
     if(top5ConstraintMatchSum != 0){
         return true;
     }
@@ -1997,15 +1992,18 @@ function SCORE(entityMatchScore, entityMatchThreshold, intentMatchScore, intentM
     return score;
 }
 
-function RankerCondition2(drScoreThreshold, documentPosition, curKeyFeatures, curRerankFeatures, top20doc, hostId, documentsLocal,keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, constraintMatchThreshold){
+function RankerCondition2(drScoreThreshold, documentPosition, curKeyFeatures, curRerankFeatures, top20doc, hostId, documentsLocal,keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, constraintMatchThreshold, url){
+
     var drScore = documents[documentPosition].l2score;
+LogDebug("1998RankerCondition2", url, drScore, drScoreThreshold, documentPosition, '\r\n');
     if(!((drScore > drScoreThreshold) && (documentPosition < 16))){
         return false;
     }
-LogDebug("1966Diversity", documents[documentPosition].url, curRerankFeatures[c_FeatureId_PEScoreDiversity], '\r\n');
-    if((curKeyFeatures.isSiteConsMatchDomain == 1000) || (curRerankFeatures[c_FeatureId_PEScoreDiversity] > 0)){
+LogDebug("2002RankerCondition2", url, curKeyFeatures.isSiteConsMatchDomain, curRerankFeatures[c_FeatureId_PEScoreDiversity], '\r\n');
+    if((curKeyFeatures.isSiteConsMatchDomain == 1000) || (curRerankFeatures[c_FeatureId_PEScoreDiversity] == 1)){
         return true;
     }
+LogDebug("2006", curKeyFeatures.lowQualitySiteScore, '\r\n');
     if (curKeyFeatures.lowQualitySiteScore != 0){
         return false;
     }
@@ -2014,31 +2012,30 @@ LogDebug("1966Diversity", documents[documentPosition].url, curRerankFeatures[c_F
 	var i = 0;
     for (i = 0; i < top20doc; ++i) {
         var curHostId = documents[i].rerankfeatures[28];//documentsLocal[i].hostid;
-        if(hostId == curHostId){
-            rankVec.push({index:i, signal: 0});
+		rankVec.push({index:i, signal: (0.95 - i / 20.0)});
+        if(hostId == curHostId){      
             var curEntityScore = keyFeaturesOfDocuments[i].entityMatchScore;
             var curIntentScore = keyFeaturesOfDocuments[i].intentMatchScore;
             var curConstraintScore = keyFeaturesOfDocuments[i].constraintMatchScore;
             var curAuthorityScore = keyFeaturesOfDocuments[i].authorityScore;
             if((curEntityScore > 0) && (curIntentScore >= 0) && (curConstraintScore != 1)){
-                rankVec.signal = SCORE(curEntityScore, entityMatchThreshold, curIntentScore, intentMatchThreshold, curConstraintScore, constraintMatchThreshold, curAuthorityScore);
+                rankVec.signal = SCORE(curEntityScore, entityMatchThreshold, curIntentScore, intentMatchThreshold, curConstraintScore, constraintMatchThreshold, curAuthorityScore)+ (0.95 - i / 20.0);
             }
             else {
-                rankVec.signal = 100;
+                rankVec.signal = 100 + (0.95 - i / 20.0);
             }
         }
+LogDebug("2028ScoreInCondition2", url, documents[i].url,rankVec[i].signal, '\r\n') ;
     }
     rankVec.sort(SortDescending);
     var rankPos = 0;
-    for(i = 0; i < rankVec.length; i++){
-        if (rankVec[i].index == documentPosition){
-            rankPos = i;
-            break;
-        }
-    }
-    if(rankPos == 0) { //************* Frank check it **************
-        return true;
-    }
+	if (rankVec.length >= 1){
+		rankPos = rankVec[0].index;
+	}
+	if (rankPos == documentPosition){
+LogDebug('2035', '\r\n');
+		return true;
+	}
     return false;
 }
 
@@ -2114,10 +2111,10 @@ LogDebug("oriPos of rankScoreVector_15th", oriPos,drScoreThreshold , '\r\n');
 		matchData = matchDataArray[i];
         featureVector = curDoc.rerankfeatures;
         url = matchData.url;
-LogDebug("\turlBegin:", url, 'urlEnd\t');
+//LogDebug("\turlBegin:", url, 'urlEnd\t');
         if (i == 0){
             var entityMatchScore = GenerateEntityMatchingScore(MSSFDecodeResult.entity, matchData);//feature:entity, matchData Contain the feature "NumberOfOccurrences_MultiInstanceTitle_0, ... , NumberOfOccurrences_MultiInstanceTitle_7"
-LogDebug("entityMatchScoreBegin",entityMatchScore, 'entityMatchScoreEnd', '\r\n');
+//LogDebug("entityMatchScoreBegin",entityMatchScore, 'entityMatchScoreEnd', '\r\n');
 //LogDebug("featureVector[c_FeatureId_PEScoreTopSite]", featureVector[c_FeatureId_PEScoreTopSite], '\r\n');
             topSiteScoreResult = PETopSiteScoreDecode(featureVector[c_FeatureId_PEScoreTopSite], MSSFDecodeResult.urlKeyword, url, featureVector[c_FeatureId_UrlDepth]);
 //LogDebug("TopSiteScoreDecode", topSiteScoreResult.authorityScore, '\r\n');
@@ -2146,7 +2143,7 @@ LogDebug("entityMatchScoreBegin",entityMatchScore, 'entityMatchScoreEnd', '\r\n'
         if (i > 0)
         {
             var entityMatchScore = GenerateEntityMatchingScore(MSSFDecodeResult.entity, matchData);//feature:entity, matchData Contain the feature "NumberOfOccurrences_MultiInstanceTitle_0, ... , NumberOfOccurrences_MultiInstanceTitle_7"
-LogDebug("entityMatchScoreBegin", entityMatchScore, 'entityMatchScoreEnd ', '\r\n');
+//LogDebug("entityMatchScoreBegin", entityMatchScore, 'entityMatchScoreEnd ', '\r\n');
 //LogDebug("featureVector[c_FeatureId_PEScoreTopSite]", featureVector[c_FeatureId_PEScoreTopSite], '\r\n');
             topSiteScoreResult = PETopSiteScoreDecode(featureVector[c_FeatureId_PEScoreTopSite], MSSFDecodeResult.urlKeyword, url, featureVector[c_FeatureId_UrlDepth]);
 //LogDebug("TopSiteScoreDecode", topSiteScoreResult.authorityScore, '\r\n');
@@ -2187,8 +2184,8 @@ LogDebug("entityMatchScoreBegin", entityMatchScore, 'entityMatchScoreEnd ', '\r\
 //LogDebug("threshold Score", thresholdArr, "\r\n");
     var entityMatchThreshold = thresholdArr[0];//--Generate through function: GenerateThresholdScore ----
     var intentMatchThreshold = thresholdArr[1];//--Generate through function: GenerateThresholdScore -----
-LogDebug("entitMatchThresholdBegin", entityMatchThreshold, "entitMatchThresholdEnd", '\r\n');
-LogDebug("intentMatchThresholdBegin", intentMatchThreshold, "intentMatchThresholdEnd", "\r\n");
+//LogDebug("entitMatchThresholdBegin", entityMatchThreshold, "entitMatchThresholdEnd", '\r\n');
+//LogDebug("intentMatchThresholdBegin", intentMatchThreshold, "intentMatchThresholdEnd", "\r\n");
     //-----1. Initial End -----
 //LogDebug("keyFeatures", keyFeaturesOfDocuments, '\r\n');
     //-----2. NewL3Score Generate Begin ------
@@ -2198,17 +2195,15 @@ LogDebug("intentMatchThresholdBegin", intentMatchThreshold, "intentMatchThreshol
     var documentPosition;
     for (var i = 0; i < top20doc; i++) {
         documentPosition = i;
-//LogDebug("isSiteConsMatchDomain", keyFeaturesOfDocuments[i].isSiteConsMatchDomain, '\r\n');
-//LogDebug("subIntentMatchtop5", sumIntentMatchTop5, '\r\n');
         if (IsGuard(keyFeaturesOfDocuments[i], documentsLocal[i].rerankfeatures, i, entityMatchThreshold, maxDRScorePos, keyFeaturesOfDocuments[i].isSiteConsMatchDomain, sumIntentMatchTop5)) { 
-//LogDebug("QueryNeedToRankBegin", i, "QueryNeedToRankEnd", '\r\n');
-            rankVector.push({ index: i, signal: 0.0 });
+            rankVector.push({ index: i, signal: (0.95 - i / 20.0) });
+//LogDebug("IsGuard", i, documents[i].url, '1', '\r\n');
             rankVectorInOriPlace.push({ index: i });
         }
         else {
-//LogDebug("QueryDoesNotNeedToRankBegin", i, "QueryDoesNotNeedToRankEnd");
-            documents[i].score = 1000.0 - i;
-            guardVector.push({ index: i, signal: 0.0 });
+//LogDebug("IsGuard", i, documents[i].url, '0', '\r\n');
+            documents[i].score = 1000.0 - i + (0.95 - i / 20.0);
+            guardVector.push({ index: i, signal: (0.95 - i / 20.0) });
         }
     }
 //LogDebug("rankVectorAndGuardVector", rankVector, guardVector, '\r\n');
@@ -2224,9 +2219,9 @@ LogDebug("intentMatchThresholdBegin", intentMatchThreshold, "intentMatchThreshol
         documentPosition = rankVector[i].index;
         //var currentHostId = documentsLocal[rankVector[i].index].hostid;
 		var currentHostId = curRerankFeatures[28];
-//LogDebug("RankerCondition1ParametersList", top20doc,keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, "top1EntityMatch", top1EntityMatch, drScoreTop1EntityMatch, top1IntentMatch, drScoreTop1IntentMatch, constraintMatchCondition, "MSSFDecodeResult", MSSFDecodeResult, matchDataArray, curRerankFeatures, '\r\n');
-        if(RankerCondition1(top20doc,keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, top1EntityMatch, drScoreTop1EntityMatch, top1IntentMatch, drScoreTop1IntentMatch, constraintMatchCondition, MSSFDecodeResult, matchDataArray, curRerankFeatures )){
-LogDebug("RankerCondition1 Satisfied", '\r\n');
+		var url = documents[documentPosition].url;
+        if(RankerCondition1(top20doc, keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, top1EntityMatch, drScoreTop1EntityMatch, top1IntentMatch, drScoreTop1IntentMatch, constraintMatchCondition, MSSFDecodeResult, matchDataArray, curRerankFeatures)){
+//LogDebug("RankerCondition1", '1', i, documents[documentPosition].url, '\r\n');
 			if(!constrainMatchFinish) {
 				MSSFDecodeResult = PostWebSlotTagging(MSSFDecodeResult, canonicalQuery, matchDataArray);
 				top5ConstraintMatchSum = GenerateTop20DocConstraintMatchingScore(top20doc, matchDataArray, keyFeaturesOfDocuments, MSSFDecodeResult, documentsLocal, constraintMatchCondition);
@@ -2234,65 +2229,59 @@ LogDebug("RankerCondition1 Satisfied", '\r\n');
 			}
 			if(!constrainMatchThresholdFinish){
 				constraintMatchThreshold = GenerateConstrainThresholdScore(matchDataArray, documentsLocal, top20doc, keyFeaturesOfDocuments);
-LogDebug("ConstrainMatchTrehsold", constraintMatchThreshold, '\r\n');
 				constrainMatchThresholdFinish = true;
 				if(IsNull(constraintMatchThreshold)) {
 					constraintMatchThreshold = 0.0;
 				}
 			}
-//LogDebug("SatisfyRankerCondition1", documentPosition, constraintMatchThreshold, '\r\n');
-            //-------------------Generate top20 constraint match score End ------------------
-//LogDebug(drScoreThreshold, documentPosition, curKeyFeatures, curRerankFeatures, top20doc, currentHostId, documentsLocal, keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, constraintMatchThreshold, '\r\n');
-            if(RankerCondition2(drScoreThreshold, documentPosition, curKeyFeatures, curRerankFeatures, top20doc, currentHostId, documentsLocal, keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, constraintMatchThreshold)){
-//LogDebug("RankerCondition2Satisfy", '\r\n');
+            if(RankerCondition2(drScoreThreshold, documentPosition, curKeyFeatures, curRerankFeatures, top20doc, currentHostId, documentsLocal, keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, constraintMatchThreshold, url)){
+LogDebug("RankerCondition2", "1", url, documentPosition, '\r\n');
                 var curEntityMatchScore = curKeyFeatures.entityMatchScore;
                 var curIntentMatchScore = curKeyFeatures.intentMatchScore;
                 var curConstraintMatchScore = curKeyFeatures.constraintMatchScore;
                 var curAuthorityScore = curKeyFeatures.authorityScore;
-//LogDebug("SatisfyRankerCondition2", curEntityMatchScore, curIntentMatchScore, curConstraintMatchScore, curAuthorityScore, '\r\n');
                 if(curEntityMatchScore > 0 && curIntentMatchScore >= 0 && curConstraintMatchScore != 1) {
-//LogDebug(i, curEntityMatchScore, entityMatchThreshold, curIntentMatchScore, intentMatchThreshold, curConstraintMatchScore, constraintMatchThreshold, curAuthorityScore, '\r\n');
                     rankVector[i].signal = SCORE(curEntityMatchScore, entityMatchThreshold, curIntentMatchScore, intentMatchThreshold, curConstraintMatchScore, constraintMatchThreshold, curAuthorityScore) + (0.95 - i / 20.0);
-//LogDebug("needScoringWatch", i, '\r\n');
                 }
                 else {
                     rankVector[i].signal = 100 + (0.95 - i / 20.0);
                 }
             }
             else {
-//LogDebug(i, "notSafisyRankerCondition2", '\r\n');
+LogDebug("RankerCondition2", "0", url, documentPosition, '\r\n');
                 rankVector[i].signal = 100 + (0.95 - i / 20.0);
             }
         }
         else {
-//LogDebug(i, "not satisfy RankerCondition1", '\r\n');
+LogDebug("RankerCondition1", '0', i, documents[documentPosition].url, '\r\n');
             rankVector[i].signal = 1000.0 - i + (0.95 - i / 20.0);
         }
     }
     rankVector.sort(SortDescending);
-for(i = 0; i < rankVector.length; i++){
-	LogDebug("rankVector", documents[rankVector[i].index].url, rankVector[i].signal, 1000.0 - rankVectorInOriPlace[i].index, '\r\n');
-}
-    //---- rankScoreVector store score feature newL3Score2 ----
-   /* for(i = 0; i < rankDocLength; ++i){
-        rankScoreVector[rankVector[i].index].newL3Score2 = 1000.0 - rankVectorInOriPlace[i].index;
- LogDebug("newl3ScoreAssign", rankVector[i].index, 1000.0 - rankVectorInOriPlace[i].index, '\r\n');
-    }
-	for(i = 0; i < top20doc; i ++) {
-		LogDebug("RankerByL3Score2", rankScoreVector[i].oriIndex, documents[rankScoreVector[i].oriIndex].url, rankScoreVector[i].newL3Score2, '\r\n');
-	}*/
+/*
+	var rankVectorLog = [];
+	for(i = 0; i < top20doc; i++){
+		rankVectorLog.push({index : i, signal : 1000 - i + (0.95 - i / 20.0)});
+	}
+	for(i = 0; i < rankVector.length; i++){
+		rankVectorLog[rankVector[i].index].signal = 1000.0 - rankVectorInOriPlace[i].index + (0.95 - i / 20.0);
+	}
+	rankVectorLog.sort(SortDescending);
+	for (i = 0; i < top20doc; i++){
+LogDebug("l3RankerResult", documents[rankVectorLog[i].index].url, rankVectorLog[i].signal, '\r\n');
+	}
+*/
     //------------------------------ Step2 NewL3Score ranker End ------------------------------------
 
-//LogDebug("Step2 NewL3Score ranker End", '\r\n');
     //----------------------------- Step3 Adjust L3 ranker Begin  ------------------------------------
 	var adjustRankerVector = [];
 	for(i = 0; i < top20doc; i++) {
-		adjustRankerVector.push({index:i, signal:1000.0 - i});
+		adjustRankerVector.push({index:i, signal:1000.0 - i + (0.95 - i / 20.0)});
 	}
     //rankScoreVector.sort(SortDescendingByNewL3Score);
 	//----asign newL3Score-----
 	for(i = 0; i < rankVector.length; i++){
-		adjustRankerVector[rankVector[i].index].signal = 1000.0 - rankVectorInOriPlace[i].index;
+		adjustRankerVector[rankVector[i].index].signal = 1000.0 - rankVectorInOriPlace[i].index + (0.95 - i / 20.0);
 	}
 	adjustRankerVector.sort(SortDescending);
 	var posby0 = 0;
@@ -2302,21 +2291,20 @@ for(i = 0; i < rankVector.length; i++){
 			break;
 		}
 	}
-
-for(var i = 0; i < adjustRankerVector.length; ++i){
-	var oriPos = adjustRankerVector[i].index;
-LogDebug("RankerByNewL3Score", i, adjustRankerVector[i].index, documents[oriPos].url, adjustRankerVector[i].signal, '\r\n');
-}
-   
 //LogDebug("posby0", posby0, '\r\n');
-    if(posby0 >= 8 || adjustCondition1(rankScoreVector, documentsLocal)){
-LogDebug('adjustCondition1Satisfy', '\r\n');
+    if(posby0 >= 8 || adjustCondition1(adjustRankerVector, documentsLocal)){
         for(var j = 0; j < top20doc; ++j){
-			adjustRankerVector[j].index = 0;
-            adjustRankerVector[j].signal = 1000.0 - j;
+			adjustRankerVector[j].index = j;
+            adjustRankerVector[j].signal = 1000.0 - j + (0.95 - j / 20.0);
         }
     }
 
+	adjustRankerVector.sort(SortDescending);
+	
+	for(var j = 0; j < top20doc; ++j){
+		var idx = adjustRankerVector[j].index;
+		LogDebug("adjustRankerVector", documents[idx].url, adjustRankerVector[j].signal, '\r\n');
+	}
     //----------------------------- Step3 Adjust L3 ranker End ------------------------------------
     //----------------------------- Step4 Sorted document based on AuthorityScore and NewL3Score2 Begin ------------------------------
     //a. document rank position based on authorityScore 
@@ -2331,21 +2319,22 @@ LogDebug('adjustCondition1Satisfy', '\r\n');
 
     //---------------------------- Step5 sorted final feature change Begin -------------------
     var equalCount = 0;
-    for (i = 0; i < Math.min(5, adjustRankerVector.length); ++i){
+    for (i = 0; i < Math.min(5, top20doc); ++i){
         if(adjustRankerVector[i].index == rankByAuthoScore[i].index){
             equalCount++;
         }
     }
-//LogDebug("equalCount", equalCount, rankByNewL3Score, '\r\n');
 	if(equalCount == 5){
         for(var j = 0; j < top20doc; ++j){
-			adjustRankerVector[j].index = 0;
-            adjustRankerVector[j].signal = 1000.0 - j;
+			adjustRankerVector[j].index = j;
+            adjustRankerVector[j].signal = 1000.0 - j + (0.95 - j / 20.0);
         }
     }
+	adjustRankerVector.sort(SortDescending);
     for (i = 0; i < adjustRankerVector.length; ++i){
-LogDebug("documenstScore", adjustRankerVector[i].index, documents[adjustRankerVector[i].index].url, adjustRankerVector[i].signal, '\r\n');
-        documents[adjustRankerVector[i].index].score = adjustRankerVector[i].signal;
+        documents[adjustRankerVector[i].index].score = parseInt(adjustRankerVector[i].signal);
+		var idx = adjustRankerVector[i].index;
+LogDebug("documentScore", documents[idx].url, documents[idx].score, '\r\n');
     }
     //---------------------------- Step5 sorted final feature change End -------------------
 }
@@ -2372,10 +2361,10 @@ function GenerateTop20DocConstraintMatchingScore(top20doc, matchDataArray, keyFe
 	return top5ConstraintMatchSum;
 }
 
-function adjustCondition1(rankScoreVector, documentsLocal){
-    var oriPos0 = rankScoreVector[0].oriIndex;
-    var oriPos1 = rankScoreVector[1].oriIndex;
-    var oriPos2 = rankScoreVector[2].oriIndex;
+function adjustCondition1(rankScoreVectorCur, documentsLocal){
+    var oriPos0 = rankScoreVectorCur[0].index;
+    var oriPos1 = rankScoreVectorCur[1].index;
+    var oriPos2 = rankScoreVectorCur[2].index;
     var newSum = documentsLocal[oriPos0].rerankfeatures[c_FeatureId_RankomaticScore] + documentsLocal[oriPos1].rerankfeatures[c_FeatureId_RankomaticScore]+ documentsLocal[oriPos2].rerankfeatures[c_FeatureId_RankomaticScore];
     var oriSum = documentsLocal[0].rerankfeatures[c_FeatureId_RankomaticScore]+ documentsLocal[1].rerankfeatures[c_FeatureId_RankomaticScore] + documentsLocal[2].rerankfeatures[c_FeatureId_RankomaticScore];
 //LogDebug("adjustCondition1", newSum, oriSum, '\r\n');
@@ -2405,13 +2394,13 @@ function IsGuard(keyFeatures, rerankFeatures, documentPosition, entityMatchScore
 
     var con2 = false;
 if (documentPosition < 5) {
-LogDebug("2413", documents[documentPosition].url, keyFeatures.guardingScore, isSiteConsMatchDomain, keyFeatures.lowQualitySiteScore, keyFeatures.entityMatchScore, keyFeatures.intentMatchScore, keyFeatures.constraintMatchScore,'\r\n');
+//LogDebug('2408', documents[documentPosition].url, ';', 'guardingScore', keyFeatures.guardingScore, ';', 'isSiteConsMatchDomain', isSiteConsMatchDomain, ';', 'lowQualitySiteScore', keyFeatures.lowQualitySiteScore, ';', 'entityMatchScore', keyFeatures.entityMatchScore, ';', 'intentMatchScore', keyFeatures.intentMatchScore, ';', 'constraintMatchScore', keyFeatures.constraintMatchScore,';', '\r\n');
 }
     if(documentPosition < 5 && keyFeatures.entityMatchScore >= entityMatchScoreThreshold && keyFeatures.intentMatchScore == 0 && keyFeatures.constraintMatchScore != c_constraintMatchScoreOpposed && keyFeatures.lowQualitySiteScore != 1 && (keyFeatures.guardingScore == 1000 || isSiteConsMatchDomain == 1000)){
         con2 = true;
     }
     var con3 = false;
-LogDebug("sumIntentMatchTop5", sumIntentMatchTop5, '\r\n');
+//LogDebug("sumIntentMatchTop5", sumIntentMatchTop5, '\r\n');
     if(keyFeatures.guardingScore != 1000 && !(sumIntentMatchTop5 > 0 && con2)){
         con3 = true;
     }
