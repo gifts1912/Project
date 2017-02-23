@@ -29,6 +29,7 @@
 // 27:NumberOfOccurrences_Body_9
 // 28:HostId
 // 29:DomainId
+// 30:AuthorityScoreOldOriginal
 
 //------------------------------------------------ DrugSideEffects Config - Begin ------------------------------------------------
 var c_SubIntentId_LyricsSongLyrics = 201;
@@ -717,7 +718,7 @@ function PETopSiteScoreExtendSection(score, isSpecific, isIntent, keyWordMatch1,
 
 function PEConstraintScoreDecode(PEConstraintScore, urlKeyword, url, urlPathDepth) {
     var scoreTemp = PEConstraintScore;
-//LogDebug("constraintScoreTemp", scoreTemp, '\r\n');
+LogDebug("720constraintScoreTemp", url, scoreTemp, '\r\n');
     var basicScore = scoreTemp & 3;
     var result = basicScore;
 
@@ -1993,39 +1994,47 @@ function SCORE(entityMatchScore, entityMatchThreshold, intentMatchScore, intentM
 }
 
 function RankerCondition2(drScoreThreshold, documentPosition, curKeyFeatures, curRerankFeatures, top20doc, hostId, documentsLocal,keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, constraintMatchThreshold, url){
-
     var drScore = documents[documentPosition].l2score;
-LogDebug("1998RankerCondition2", url, drScore, drScoreThreshold, documentPosition, '\r\n');
+//LogDebug("1998RankerCondition2", url, drScore, drScoreThreshold, documentPosition, '\r\n');
     if(!((drScore > drScoreThreshold) && (documentPosition < 16))){
         return false;
     }
-LogDebug("2002RankerCondition2", url, curKeyFeatures.isSiteConsMatchDomain, curRerankFeatures[c_FeatureId_PEScoreDiversity], '\r\n');
+//LogDebug("2002RankerCondition2", url, curKeyFeatures.isSiteConsMatchDomain, curRerankFeatures[c_FeatureId_PEScoreDiversity], '\r\n');
     if((curKeyFeatures.isSiteConsMatchDomain == 1000) || (curRerankFeatures[c_FeatureId_PEScoreDiversity] == 1)){
         return true;
     }
-LogDebug("2006", curKeyFeatures.lowQualitySiteScore, '\r\n');
+//LogDebug("2006", url, curKeyFeatures.lowQualitySiteScore, '\r\n');
     if (curKeyFeatures.lowQualitySiteScore != 0){
         return false;
     }
 
     var rankVec = [];
-	var i = 0;
-    for (i = 0; i < top20doc; ++i) {
+    for (var i = 0; i < top20doc; ++i) {
         var curHostId = documents[i].rerankfeatures[28];//documentsLocal[i].hostid;
 		rankVec.push({index:i, signal: (0.95 - i / 20.0)});
+		//log begin 
+		if (documentPosition == 1){
+			var curEntityScore = keyFeaturesOfDocuments[i].entityMatchScore;
+            var curIntentScore = keyFeaturesOfDocuments[i].intentMatchScore;
+            var curConstraintScore = keyFeaturesOfDocuments[i].constraintMatchScore;
+            var curAuthorityScore = keyFeaturesOfDocuments[i].authorityScore;
+LogDebug("2020", documents[i].url, curIntentScore, curConstraintScore, curAuthorityScore, curEntityScore, entityMatchThreshold, intentMatchThreshold, constraintMatchThreshold, '\r\n');
+//LogDebug("2025", documents[i].url, curHostId, '\r\n');
+		} 
+		//log end
         if(hostId == curHostId){      
             var curEntityScore = keyFeaturesOfDocuments[i].entityMatchScore;
             var curIntentScore = keyFeaturesOfDocuments[i].intentMatchScore;
             var curConstraintScore = keyFeaturesOfDocuments[i].constraintMatchScore;
             var curAuthorityScore = keyFeaturesOfDocuments[i].authorityScore;
             if((curEntityScore > 0) && (curIntentScore >= 0) && (curConstraintScore != 1)){
-                rankVec.signal = SCORE(curEntityScore, entityMatchThreshold, curIntentScore, intentMatchThreshold, curConstraintScore, constraintMatchThreshold, curAuthorityScore)+ (0.95 - i / 20.0);
+                rankVec[i].signal = SCORE(curEntityScore, entityMatchThreshold, curIntentScore, intentMatchThreshold, curConstraintScore, constraintMatchThreshold, curAuthorityScore)+ (0.95 - i / 20.0);
             }
             else {
-                rankVec.signal = 100 + (0.95 - i / 20.0);
+                rankVec[i].signal = 100 + (0.95 - i / 20.0);
             }
         }
-LogDebug("2028ScoreInCondition2", url, documents[i].url,rankVec[i].signal, '\r\n') ;
+//LogDebug("2028ScoreInCondition2", url, documents[i].url,rankVec[i].signal, '\r\n') ;
     }
     rankVec.sort(SortDescending);
     var rankPos = 0;
@@ -2033,7 +2042,7 @@ LogDebug("2028ScoreInCondition2", url, documents[i].url,rankVec[i].signal, '\r\n
 		rankPos = rankVec[0].index;
 	}
 	if (rankPos == documentPosition){
-LogDebug('2035', '\r\n');
+//LogDebug('2035', rankPos, '\r\n');
 		return true;
 	}
     return false;
@@ -2122,7 +2131,8 @@ LogDebug("oriPos of rankScoreVector_15th", oriPos,drScoreThreshold , '\r\n');
 			var curDomainId = featureVector[29];
             authorityIsSiteConsMatchScore = GenerateAuthorityScore(topSiteScoreResult.authorityScore, MSSFDecodeResult.entity, MSSFDecodeResult.siteConstraint, url, curHostId, curDomainId, MSSFDecodeResult.officialSite, i);
             isSiteConsMatchDomain = authorityIsSiteConsMatchScore[1];
-            var authorityScore = authorityIsSiteConsMatchScore[0];
+           // var authorityScore = authorityIsSiteConsMatchScore[0];
+		   var authorityScore = featureVector[30];
 //LogDebug(" authorityScoreBegin", i, authorityScore, 'authorityScoreEnd', '\r\n');
             specificSiteScore = topSiteScoreResult.isSpecific;
             //var intentMatchScore = GenerateIntentMatchingScore(intentMatchCondition, MSSFDecodeResult.intent, matchData, topSiteScoreResult.isIntent);
@@ -2153,7 +2163,8 @@ LogDebug("oriPos of rankScoreVector_15th", oriPos,drScoreThreshold , '\r\n');
 			authorityIsSiteConsMatchScore = GenerateAuthorityScore(topSiteScoreResult.authorityScore, MSSFDecodeResult.entity, MSSFDecodeResult.siteConstraint, url, curHostId, curDomainId, MSSFDecodeResult.officialSite, i);
             isSiteConsMatchDomain = authorityIsSiteConsMatchScore[1];
 //LogDebug("isSiteConsMatchDomain", i, isSiteConsMatchDomain, '\r\n');
-            var authorityScore = authorityIsSiteConsMatchScore[0];
+            //var authorityScore = authorityIsSiteConsMatchScore[0];
+			var authorityScore = featureVector[30];
 //LogDebug("-0->", authorityScore, "<-0-", '\r\n')
 //LogDebug(" authorityScoreBegin", i, authorityScore, 'authorityScoreEnd', '\r\n');
             specificSiteScore = topSiteScoreResult.isSpecific;
@@ -2258,19 +2269,20 @@ LogDebug("RankerCondition1", '0', i, documents[documentPosition].url, '\r\n');
         }
     }
     rankVector.sort(SortDescending);
-/*
+
 	var rankVectorLog = [];
 	for(i = 0; i < top20doc; i++){
 		rankVectorLog.push({index : i, signal : 1000 - i + (0.95 - i / 20.0)});
 	}
 	for(i = 0; i < rankVector.length; i++){
+LogDebug("rankVector", rankVector[i].index, documents[rankVector[i].index].url, rankVector[i].signal, '\r\n');
 		rankVectorLog[rankVector[i].index].signal = 1000.0 - rankVectorInOriPlace[i].index + (0.95 - i / 20.0);
 	}
 	rankVectorLog.sort(SortDescending);
 	for (i = 0; i < top20doc; i++){
-LogDebug("l3RankerResult", documents[rankVectorLog[i].index].url, rankVectorLog[i].signal, '\r\n');
+LogDebug("l3RankerResult", documents[rankVectorLog[i].index].url, rankVectorLog[i].signal, rankVectorLog[i].index,'\r\n');
 	}
-*/
+
     //------------------------------ Step2 NewL3Score ranker End ------------------------------------
 
     //----------------------------- Step3 Adjust L3 ranker Begin  ------------------------------------
