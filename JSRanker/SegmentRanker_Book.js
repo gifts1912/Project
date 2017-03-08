@@ -1,24 +1,25 @@
 // C: comments.
-// 0:DomainAuthorityFeature_DUMultiInstanceUrlV2_0_4
-// 1:DomainAuthorityFeature_DUMultiInstanceUrlV2_0_7
-// 2:DomainAuthorityFeature_DUMultiInstanceUrlV2_0_5
-// 3:DomainAuthorityFeature_DUMultiInstanceUrlV2_0_6
-// 4:DomainAuthorityFeature_DUMultiInstanceUrlV2_0_8
+// 0:DomainAuthorityFeature_DUMultiInstanceUrlV2_0_10
+// 1:DomainAuthorityFeature_DUMultiInstanceUrlV2_0_12
+// 2:DomainAuthorityFeature_DUMultiInstanceUrlV2_0_11
+// 3:DomainAuthorityFeature_DUMultiInstanceUrlV2_0_9
+// 4:DomainAuthorityFeature_DUMultiInstanceUrlV2_0_13
 // 5:UrlDepth
 // 6:OnlineMemoryUrlFeature_0
+// include <\data\TLARanking\xliu\FusionV1\MicroSegmentUtils-20170216.js>
 
-//------------------------------------------------ DrugSideEffects Config - Begin ------------------------------------------------
+//------------------------------------------------ Book Match Condition Config - Begin ------------------------------------------------
 var c_SubIntentId_BookSingleEntity = 401;
 var c_SubIntentId_BookOthers = 402;
 
 var intentMatchCondition = [];
-intentMatchCondition[c_SubIntentId_BookSingleEntity] = [0, 2, 0];
-intentMatchCondition[c_SubIntentId_BookOthers] = [0, 2, 0];
+intentMatchCondition[c_SubIntentId_BookSingleEntity] = [0, 1, 0];
+intentMatchCondition[c_SubIntentId_BookOthers] = [0, 1, 0];
 
 var constraintMatchCondition = [];
 constraintMatchCondition[c_SubIntentId_BookSingleEntity] = [3, 3, 3, 3, 3];
 constraintMatchCondition[c_SubIntentId_BookOthers] = [3, 3, 3, 3, 3];
-//------------------------------------------------ DrugSideEffects Config - End ------------------------------------------------
+//------------------------------------------------ Book Match Condition Config - End ------------------------------------------------
 
 //------------------------------------------------ Constant Define - Begin ------------------------------------------------
 var c_subIntentIdQLF = 2662;
@@ -66,6 +67,12 @@ var c_entityMatchScoreThres_LB = c_entityMatchScore_4th;
 
 // Stopwords used in PostWeb Slot Tagging
 var c_stopWordsList = new Array("about", "an", "and", "are", "as", "at", "be", "but", "by", "com", "for", "from", "how", "if", "in", "is", "it", "of", "on", "or", "that", "the", "this", "to", "was", "what", "when", "where", "which", "who", "will", "with", "would", "www", "a", "i", "your", "s", "com", "book", "books", "novel", "novels", "the", "a", "an", "full", "short", "brief", "complete", "story", "poem", "series", "read", "buy");
+
+var c_baseFusionScore=-8.0;
+var c_entityMatchFusionScore=0.75;
+var c_intentMatchFusionScore=0.75;
+var c_constraintMatchFusionScore=0.75;
+var c_authorityFusionScore=0.75;
 //------------------------------------------------ Constant Define - End ------------------------------------------------
 
 var msSemanticFrame;
@@ -81,9 +88,7 @@ if (!addquerylist.IsEmpty()) {
 
 var documentCount = documents.count;
 if (IsNull(msSemanticFrame)) {
-    for (var i = 0; i < documentCount; ++i) {
-        documents[i].score = 1000.0 - i;
-    }
+    AssignAbstentionSegmentScore();
 }
 else {
     var subIntentId = qlfs[c_subIntentIdQLF];
@@ -92,227 +97,44 @@ else {
     var query = extractedquery;
 
     var MSSFDecodeResult = MSSFDecode(msSemanticFrame);
-    var wordDropQuery = query.replace(/word:\((\w+)[^\)]+\)/g, "$1").replace(/rankonly:/g, "");
+    var wordDropQuery = query.replace(/word:\("?(\w+)[^\)]+\)/g, "$1").replace(/rankonly:/g, "");
     var queryTermArray = wordDropQuery.split(" ");
-    var queryTermDict = {};
-    for (var i = 0, len = queryTermArray.length; i < len; i++) {
-        var term = queryTermArray[i];
-        if (IsNull(queryTermDict[term])) {
-            queryTermDict[term] = i;
+    if (subIntentId == c_SubIntentId_BookOthers && queryTermArray.length > 10) {
+        AssignAbstentionSegmentScore();
+    }
+    else {
+        var queryTermDict = {};
+        for (var i = 0, len = queryTermArray.length; i < len; i++) {
+            var term = queryTermArray[i];
+            if (IsNull(queryTermDict[term])) {
+                queryTermDict[term] = i;
+            }
         }
-    }
 
-    var matchDataArray = [];
-    for (var i = 0, len = documentCount; i < len; ++i) {
-        var curDoc = documents[i];
-        var marketVector = curDoc.markers;
+        var matchDataArray = [];
+        for (var i = 0, len = documentCount; i < len; ++i) {
+            var curDoc = documents[i];
+            var markerVector = curDoc.markers;
 
-        var title = curDoc.rawtitle;
-        var url = curDoc.url;
-        var snippet = curDoc.rawsnippet;
-        // if (url == "http://www.barnesandnoble.com/w/one-god-one-lord-larry-w-hurtado/1103131496")
-            // LogDebug("-----" + title + "\t" + url + "\t" + snippet + "\t");
-        title = IsNull(title) ? "" : StreamNormalization(title);
-        url = IsNull(url) ? "" : url.toLowerCase().substring(0, c_maxCaptionCharLength);
-        snippet = IsNull(snippet) ? "" : StreamNormalization(snippet);
+            var title = curDoc.rawtitle;
+            var url = curDoc.url;
+            var snippet = curDoc.rawsnippet;
 
-        var wordFoundTitleArray = ParseWordCandidatePresence(marketVector[c_MarkerId_WordCandidatePresence_MultiInstanceTitle]);
-        var wordFoundBodyArray = ParseWordCandidatePresence(marketVector[c_MarkerId_WordCandidatePresence_Body]);
-        // if (url == "http://www.barnesandnoble.com/w/one-god-one-lord-larry-w-hurtado/1103131496")
-            // LogDebug(title + "\t" + url + "\t" + snippet + "\t" + marketVector[c_MarkerId_WordCandidatePresence_MultiInstanceTitle] + "\t" + marketVector[c_MarkerId_WordCandidatePresence_Body]);
-        var matchData = new MatchData(title, url, snippet, wordFoundTitleArray, wordFoundBodyArray);
-        matchDataArray.push(matchData);
-    }
-    
-    // for (i = 0; i < matchDataArray.length; i++) {
-        // LogDebug("@@@" + i + "\t" + matchDataArray[i].url+ "\t");
-    // }
-    
-    MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArray, intentMatchCondition[subIntentId], constraintMatchCondition[subIntentId], documents, documentCount);
-    var keyFeaturesOfDocuments = [];
-    var docCount = documentCount;
-    var top10doc = Math.min(docCount, 10);
-    var top20doc = Math.min(docCount, 20);
-    var curDoc, featureVector, matchData, url;
-    var entityMatchScoreArray = new Array(0, 0, 0);
-    var entityMatchScoreThreshold = 0;
-    var entityMatchingScorePosTop1 = 0;
-    var isTrigger = true;
-    var maxDRScore = 0;
-    var maxDRScorePos = 0;
-    for (var i = 0; i < top20doc; ++i) 
-    {
-        curDoc = documents[i];
-        featureVector = curDoc.rerankfeatures;
-        matchData = matchDataArray[i];
-        url = matchData.url;
-        
-        var entityMatchScore = GenerateEntityMatchingScore(MSSFDecodeResult.entity, matchData);
-        var topSiteScoreResult = PETopSiteScoreDecode(featureVector[c_FeatureId_PEScoreTopSite], MSSFDecodeResult.urlKeyword, url, featureVector[c_FeatureId_UrlDepth]);
-        var authorityScore = GenerateAuthorityScore(topSiteScoreResult.authorityScore, MSSFDecodeResult.entity, MSSFDecodeResult.siteConstraint, url, curDoc.hostid, curDoc.domainid, MSSFDecodeResult.officialSite, i);
-        var specificSiteScore = topSiteScoreResult.isSpecific;
-        var intentMatchScore = GenerateIntentMatchingScore(intentMatchCondition[subIntentId], MSSFDecodeResult.intent, matchData, topSiteScoreResult.isIntent);
-        var lowQualitySiteScore = featureVector[c_FeatureId_PEScoreLowQuality];
-        var guardingScore = GenerateGuardingScore(featureVector[c_FeatureId_PEScoreGuarding], MSSFDecodeResult.guardingkeyword, matchData);
-        //LogDebug("", " url=" + url + "    position=" + i + "    subIntentId=" + subIntentId + "    subIntentScore=" + subIntentScore + "    entityMatchScore=" + entityMatchScore + "    authorityScore=" + authorityScore + "    specificSiteScore=" + specificSiteScore + "    intentMatchScore=" + intentMatchScore + "    title="+matchData.title+"    snip="+matchData.snippet+"    lowQualitySiteScore=" + lowQualitySiteScore + "    guardingScore=" + guardingScore);
+            title = IsNull(title) ? "" : StreamNormalization(title);
+            url = IsNull(url) ? "" : url.toLowerCase().substring(0, c_maxCaptionCharLength);
+            snippet = IsNull(snippet) ? "" : StreamNormalization(snippet);
+
+            var wordFoundTitleArray = ParseWordCandidatePresence(markerVector[c_MarkerId_WordCandidatePresence_MultiInstanceTitle]);
+            var wordFoundBodyArray = ParseWordCandidatePresence(markerVector[c_MarkerId_WordCandidatePresence_Body]);
+            var matchData = new MatchData(title, url, snippet, wordFoundTitleArray, wordFoundBodyArray);
+            matchDataArray.push(matchData);
+        }        
+        MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArray, intentMatchCondition[subIntentId], constraintMatchCondition[subIntentId], documents, documentCount);
     }
 }
-
-//------------------------------------------------ MSSemanticFrame Decoder - Begin ------------------------------------------------
-function MSSFDecode(addQuery) {
-    var entity = [];
-    var intent = [];
-    var constraint = [];
-    var urlKeyword = new UrlKeywordClass([], [], []);
-    var guardingkeyword = [];
-    var officialSite = [];
-    var siteConstraint = [];
-    var otherSlots = [];
-
-    var items = addQuery.split(",");
-    for (var i = 0, itemLen = items.length; i < itemLen; i++) {
-        if (items[i] === "") {
-            continue;
-        }
-        var keyValuePair = items[i].split(":");
-        if (keyValuePair.length != 2) {
-            continue;
-        }
-        if (keyValuePair[1] === "") {
-            continue;
-        }
-        var key = keyValuePair[0];
-        var value = keyValuePair[1];
-        var j, len;
-        if (key == "entity" || key == "Entity") {
-            var entityListTemp = value.split("^");
-            var entitySet = {};
-            for (j = 0, len = entityListTemp.length; j < len; j++) {
-                var entityItemArray = entityListTemp[j].split("&");
-                var entityItemArrayLen = entityItemArray.length;
-                if (entityItemArrayLen >= 1 && entityItemArray[0] === "") {
-                    continue;
-                }
-                var entitySpan = entityItemArray[0];
-                var entitySpanCode = GenerateHashCode(entitySpan);
-                var entityScore = "1.0";
-                if (IsNull(entitySet[entitySpanCode])) {
-                    if (entityItemArrayLen == 2) {
-                        entityScore = entityItemArray[1];
-                    }
-                    entity.push(new EntityClass(entitySpan, entityScore));
-                    entitySet[entitySpanCode] = 1;
-                }    
-            }
-        }
-        else if (key == "intent" || key == "Intent") {
-            intent = value.split("|");
-        }
-        else if (key == "constraint" || key == "Constraint") {
-            var constraintListTemp = value.split("^");
-            var constraintSet = {};
-            for (j = 0, len = constraintListTemp.length; j < len; j++) {
-                var constraintItemArray = constraintListTemp[j].split("&");
-                if (constraintItemArray.length != 1 && constraintItemArray.length != 4) {
-                    continue;
-                }
-                var constraintOri = constraintItemArray[0];
-                var constraintSyno = [];
-                var constraintOpposed = [];
-                var constraintExclude = [];
-                if (constraintItemArray.length == 4) {
-                    constraintSyno = constraintItemArray[1].split("|");
-                    constraintOpposed = constraintItemArray[2].split("|");
-                    constraintExclude = constraintItemArray[3].split("|");
-                }
-                var constraintCode = GenerateHashCode(constraintOri);
-                if (IsNull(constraintSet[constraintCode])) {
-                    constraint.push(new ConstraintClass(constraintOri, constraintSyno, constraintOpposed, constraintExclude));
-                    constraintSet[constraintCode] = 1;
-                }
-            }
-        }
-        else if (key == "urlkeyword" || key == "UrlKeyword") {
-            var urlKeywordListTemp = new Array("", "", "");
-            var inputUrlKeyWordList = value.split("&", 3);
-            for (j = 0, len = inputUrlKeyWordList.length; j < len; j++) {
-                urlKeywordListTemp[j] = inputUrlKeyWordList[j];
-            }
-            urlKeyword = new UrlKeywordClass(urlKeywordListTemp[0].split("|"), urlKeywordListTemp[1].split("|"), urlKeywordListTemp[2].split("|"));
-        }
-        else if (key == "guarding" || key == "Guarding") {
-            guardingkeyword = value.split("|");
-        }
-        else if (key == "officialsite" || key == "OfficialSite") {
-            var officialSiteListTemp = value.split("^");
-            for (j = 0, len = officialSiteListTemp.length; j < len; j++) {
-                var officialSiteItemArray = officialSiteListTemp[j].split("&");
-                if (officialSiteItemArray.length != 2) {
-                    continue;
-                }
-                officialSite.push(new OfficialSiteClass(officialSiteItemArray[0], officialSiteItemArray[1]));
-            }
-        }
-        else if (key == "siteconstraint" || key == "SiteConstraint") {
-            var siteConstraintTemp = value.split("^");
-            var siteConstraintSet = {};
-            for (j = 0, len = siteConstraintTemp.length; j < len; j++) {
-                var siteCons = siteConstraintTemp[j];
-                var siteConsCode = GenerateHashCode(siteCons);
-                if (IsNull(siteConstraintSet[siteConsCode])) {
-                    siteConstraint.push(siteCons);
-                    siteConstraintSet[siteConsCode] = 1;
-                }
-            }
-        }
-        else if (key == "otherslots" || key == "OtherSlots") {
-            var otherSlotListTemp = value.split("^");
-            for (j = 0, len = otherSlotListTemp.length; j < len; j++) {
-                otherSlots.push(otherSlotListTemp[j]);
-            }
-        }
-    }
-    return new MSSFDecodeResult(entity, intent, constraint, urlKeyword, guardingkeyword, officialSite, siteConstraint, otherSlots);
-}
-
-function MSSFDecodeResult(entity, intent, constraint, urlKeyword, guardingkeyword, officialSite, siteConstraint, otherSlots) {
-    this.entity = entity;
-    this.intent = intent;
-    this.constraint = constraint;
-    this.urlKeyword = urlKeyword;
-    this.guardingkeyword = guardingkeyword;
-    this.officialSite = officialSite;
-    this.siteConstraint = siteConstraint;
-    this.otherSlots = otherSlots;
-}
-
-function EntityClass(text, score) {
-    this.text = text;
-    this.score = score;
-}
-
-function ConstraintClass(original, synonym, opposed, exclude) {
-    this.original = original;
-    this.synonym = synonym;
-    this.opposed = opposed;
-    this.exclude = exclude;
-}
-
-function UrlKeywordClass(keyword1, keyword2, keyword3) {
-    this.keyword1 = keyword1;
-    this.keyword2 = keyword2;
-    this.keyword3 = keyword3;
-}
-
-function OfficialSiteClass(domainId, hostId) {
-    this.domainId = domainId;
-    this.hostId = hostId;
-}
-//------------------------------------------------ MSSemanticFrame Decoder - End ------------------------------------------------
-
 
 //------------------------------------------------ Post-web Slot Tagging - Begin ------------------------------------------------
-function PostWebSlotTagging(MSSFDecodeResult, query, matchDataArray) {
+function PostWebSlotTagging_Local(MSSFDecodeResult, query, matchDataArray) {
     var filterTermDict = {};
     var i, j, len, code, termCount, termArray;
     var stopWordsList = c_stopWordsList;
@@ -371,8 +193,8 @@ function PostWebSlotTagging(MSSFDecodeResult, query, matchDataArray) {
         for (j = 0; j < candCount; j++) {
             curCandidate = candidateList[j];
             curCandTerm = curCandidate.term;
-            var isCandidateMatchTitle = WordsFoundForTitleSnippet(curCandTerm, matchData.wordFoundTitleArray, matchData.title) == 1;
-            var isCandidateMatchSnippet = WordsFoundForTitleSnippet(curCandTerm, matchData.wordFoundBodyArray, matchData.snippet) == 1;
+            var isCandidateMatchTitle = WordsFoundForTitleSnippet_Local(curCandTerm, matchData.wordFoundTitleArray, matchData.title) == 1;
+            var isCandidateMatchSnippet = WordsFoundForTitleSnippet_Local(curCandTerm, matchData.wordFoundBodyArray, matchData.snippet) == 1;
 
             if (isCandidateMatchTitle) {
                 if (i < 5) {
@@ -399,27 +221,17 @@ function PostWebSlotTagging(MSSFDecodeResult, query, matchDataArray) {
         curCandidate = candidateList[j];
         if (curCandidate.titleTop5Count >= c_PostwebConstraintTitleTop5Thres || curCandidate.titleTop10Count >= c_PostwebConstraintTitleTop10Thres || curCandidate.bodyTop5Count >= c_PostwebConstraintBodyTop5Thres || curCandidate.bodyTop10Count >= c_PostwebConstraintBodyTop10Thres) {
             curCandTerm = curCandidate.term;
-            //LogDebug(curCandTerm+"\t");
-            //if (WordsFoundForTitleSnippet(curCandTerm, top1MatchData.wordFoundTitleArray, top1MatchData.title) == 1 && WordsFoundForTitleSnippet(curCandTerm, drScoreTop1MatchData.wordFoundTitleArray, drScoreTop1MatchData.title) == 1) {
-                MSSFDecodeResult.constraint.push(new ConstraintClass(curCandTerm, "", "", ""));
-            //}
+            MSSFDecodeResult.constraint.push(new ConstraintClass(curCandTerm, "", "", ""));
         }
     }
     return MSSFDecodeResult;
 }
 
-function CandidateTermClass(term) {
-    this.term = term;
-    this.titleTop5Count = 0;
-    this.titleTop10Count = 0;
-    this.bodyTop10Count = 0;
-    this.bodyTop5Count = 0;
-}
 //------------------------------------------------ Post-web Slot Tagging - End ------------------------------------------------
 
 
 //------------------------------------------------ PEScore Decoder - Begin ------------------------------------------------
-function PETopSiteScoreDecode(PETopSiteScore, urlKeyword, url, urlPathDepth) {
+function PETopSiteScoreDecode_Local(PETopSiteScore, urlKeyword, url, urlPathDepth) {
     var scoreTemp = PETopSiteScore;
 
     var basicSection = PETopSiteScoreBasicSectionDecode(scoreTemp);
@@ -428,24 +240,21 @@ function PETopSiteScoreDecode(PETopSiteScore, urlKeyword, url, urlPathDepth) {
     var keyword1 = urlKeyword.keyword1;
     var keyword2 = urlKeyword.keyword2;
     var keyword3 = urlKeyword.keyword3;
-    // LogDebug("url: " + url + "\t");
-    // LogDebug("PETopSiteScore: " + PETopSiteScore + "\t");
-    // LogDebug(" keyword1: " + keyword1+"\t");
+
     scoreTemp = scoreTemp >>> 6;
-    //LogDebug(" scoreTemp: " + scoreTemp+"\t");
     if (scoreTemp > 0) {
-        var extendSection1 = PETopSiteScoreExtendSectionDecode(scoreTemp);
+        var extendSection1 = PETopSiteScoreExtendSectionDecode_Local(scoreTemp);
         var isExtend1 = true;
         if (extendSection1.pathDepth > 0 && extendSection1.pathDepth != urlPathDepth) {
             isExtend1 = false;
         }
-        if (isExtend1 && extendSection1.keyWordMatch1 == 1 && !IsArrayPhraseMatchForUrl(keyword1, url)) {
+        if (isExtend1 && extendSection1.keyWordMatch1 == 1 && !IsArrayPhraseMatchForUrl_Local(keyword1, url)) {
             isExtend1 = false;
         }
-        if (isExtend1 && extendSection1.keyWordMatch2 == 1 && !IsArrayPhraseMatchForUrl(keyword2, url)) {
+        if (isExtend1 && extendSection1.keyWordMatch2 == 1 && !IsArrayPhraseMatchForUrl_Local(keyword2, url)) {
             isExtend1 = false;
         }
-        if (isExtend1 && extendSection1.keyWordMatch3 == 1 && !IsArrayPhraseMatchForUrl(keyword3, url)) {
+        if (isExtend1 && extendSection1.keyWordMatch3 == 1 && !IsArrayPhraseMatchForUrl_Local(keyword3, url)) {
             isExtend1 = false;
         }
         if (isExtend1) {
@@ -454,54 +263,30 @@ function PETopSiteScoreDecode(PETopSiteScore, urlKeyword, url, urlPathDepth) {
         else {
             scoreTemp = scoreTemp >>> 12;
             if (scoreTemp > 0) {
-                var extendSection2 = PETopSiteScoreExtendSectionDecode(scoreTemp);
+                var extendSection2 = PETopSiteScoreExtendSectionDecode_Local(scoreTemp);
                 var isExtend2 = true;
                 if (extendSection2.pathDepth > 0 && extendSection2.pathDepth != urlPathDepth) {
                     isExtend2 = false;
                 }
-                if (isExtend2 && extendSection2.keyWordMatch1 == 1 && !IsArrayPhraseMatchForUrl(keyword1, url)) {
+                if (isExtend2 && extendSection2.keyWordMatch1 == 1 && !IsArrayPhraseMatchForUrl_Local(keyword1, url)) {
                     isExtend2 = false;
                 }
-                if (isExtend2 && extendSection2.keyWordMatch2 == 1 && !IsArrayPhraseMatchForUrl(keyword2, url)) {
+                if (isExtend2 && extendSection2.keyWordMatch2 == 1 && !IsArrayPhraseMatchForUrl_Local(keyword2, url)) {
                     isExtend2 = false;
                 }
-                if (isExtend2 && extendSection2.keyWordMatch3 == 1 && !IsArrayPhraseMatchForUrl(keyword3, url)) {
+                if (isExtend2 && extendSection2.keyWordMatch3 == 1 && !IsArrayPhraseMatchForUrl_Local(keyword3, url)) {
                     isExtend2 = false;
                 }
-                // LogDebug("isExtend2: " + isExtend2 + "\t");
-                // LogDebug("urlPathDepth: " + urlPathDepth + "\t");
-                // LogDebug("keyword1 match: " + IsArrayPhraseMatchForUrl(keyword1, url) + "\t");
                 if (isExtend2) {
                     result = new PETopSiteScoreDecodeResult(extendSection2.score, extendSection2.isSpecific, extendSection2.isIntent);
                 }
             }
-        }
-        // LogDebug("isExtend1: " + isExtend1 + "\t");
-        // LogDebug("urlPathDepth: " + urlPathDepth + "\t");
-        // LogDebug("keyword1 match: " + IsArrayPhraseMatchForUrl(keyword1, url) + "\t");
-        // LogDebug("extendSection1.keyWordMatch1 " + extendSection1.keyWordMatch1 + "\t");
-        // LogDebug("extendSection1.pathDepth " + extendSection1.pathDepth + "\t");
-        // LogDebug("extendSection1.score " + extendSection1.score + "\t");
-        // LogDebug("extendSection1.isSpecific " + extendSection1.isSpecific + "\t");
-        // LogDebug("extendSection1.isIntent " + extendSection1.isIntent + "\t");
+        }    
     }
     return result;
 }
 
-function PETopSiteScoreBasicSectionDecode(score) {
-    var scoreTemp = score;
-    var isSpecificBasic = scoreTemp & 1;
-
-    scoreTemp = scoreTemp >>> 1;
-    var isIntentBasic = scoreTemp & 1;
-
-    scoreTemp = scoreTemp >>> 1;
-    var scoreBasic = scoreTemp & 15;
-
-    return new PETopSiteScoreBasicSection(scoreBasic, isSpecificBasic, isIntentBasic);
-}
-
-function PETopSiteScoreExtendSectionDecode(score) {
+function PETopSiteScoreExtendSectionDecode_Local(score) {
     var scoreTemp = score;
     var PETopSiteScoreBasicSectionTemp = PETopSiteScoreBasicSectionDecode(scoreTemp);
     scoreTemp = scoreTemp >>> 6;
@@ -518,113 +303,11 @@ function PETopSiteScoreExtendSectionDecode(score) {
 
     return new PETopSiteScoreExtendSection(PETopSiteScoreBasicSectionTemp.score, PETopSiteScoreBasicSectionTemp.isSpecific, PETopSiteScoreBasicSectionTemp.isIntent, keyWordMatch1, 0, 0, pathDepth);
 }
-
-function PETopSiteScoreDecodeResult(authorityScore, isSpecific, isIntent) {
-    this.authorityScore = authorityScore;
-    this.isSpecific = isSpecific;
-    this.isIntent = isIntent;
-}
-
-function PETopSiteScoreBasicSection(score, isSpecific, isIntent) {
-    this.score = score;
-    this.isSpecific = isSpecific;
-    this.isIntent = isIntent;
-}
-
-function PETopSiteScoreExtendSection(score, isSpecific, isIntent, keyWordMatch1, keyWordMatch2, keyWordMatch3, pathDepth) {
-    this.score = score;
-    this.isSpecific = isSpecific;
-    this.isIntent = isIntent;
-    this.keyWordMatch1 = keyWordMatch1;
-    this.keyWordMatch2 = keyWordMatch2;
-    this.keyWordMatch3 = keyWordMatch3;
-    this.pathDepth = pathDepth;
-}
-
-function PEConstraintScoreDecode(PEConstraintScore, urlKeyword, url, urlPathDepth) {
-    var scoreTemp = PEConstraintScore;
-    var basicScore = scoreTemp & 3;
-    var result = basicScore;
-
-    var keyword1 = urlKeyword.keyword1;
-    var keyword2 = urlKeyword.keyword2;
-    var keyword3 = urlKeyword.keyword3;
-
-    scoreTemp = scoreTemp >>> 2;
-    if (scoreTemp > 0) {
-        var extendSection1 = PEConstraintScoreExtendSectionDecode(scoreTemp);
-        var isExtend1 = true;
-        if (extendSection1.pathDepth > 0 && extendSection1.pathDepth != urlPathDepth) {
-            isExtend1 = false;
-        }
-        if (isExtend1 && extendSection1.keyWordMatch1 == 1 && !IsArrayPhraseMatchForUrl(keyword1, url)) {
-            isExtend1 = false;
-        }
-        if (isExtend1 && extendSection1.keyWordMatch2 == 1 && !IsArrayPhraseMatchForUrl(keyword2, url)) {
-            isExtend1 = false;
-        }
-        if (isExtend1 && extendSection1.keyWordMatch3 == 1 && !IsArrayPhraseMatchForUrl(keyword3, url)) {
-            isExtend1 = false;
-        }
-        if (isExtend1) {
-            result = extendSection1.score;
-        }
-        else {
-            scoreTemp = scoreTemp >>> 8;
-            if (scoreTemp > 0) {
-                var extendSection2 = PEConstraintScoreExtendSectionDecode(scoreTemp);
-                var isExtend2 = true;
-                if (extendSection2.pathDepth > 0 && extendSection2.pathDepth != urlPathDepth) {
-                    isExtend2 = false;
-                }
-                if (isExtend2 && extendSection2.keyWordMatch1 == 1 && !IsArrayPhraseMatchForUrl(keyword1, url)) {
-                    isExtend2 = false;
-                }
-                if (isExtend2 && extendSection2.keyWordMatch2 == 1 && !IsArrayPhraseMatchForUrl(keyword2, url)) {
-                    isExtend2 = false;
-                }
-                if (isExtend2 && extendSection2.keyWordMatch3 == 1 && !IsArrayPhraseMatchForUrl(keyword3, url)) {
-                    isExtend2 = false;
-                }
-                if (isExtend2) {
-                    result = extendSection2.score;
-                }
-            }
-        }
-    }
-    return result;
-}
-
-function PEConstraintScoreExtendSectionDecode(score) {
-    var scoreTemp = score;
-    var PEConstraintScore = scoreTemp & 3;
-    scoreTemp = scoreTemp >>> 2;
-    var pathDepth = scoreTemp & 7;
-
-    scoreTemp = scoreTemp >>> 3;
-    var keyWordMatch1 = scoreTemp & 1;
-
-    scoreTemp = scoreTemp >>> 1;
-    var keyWordMatch2 = scoreTemp & 1;
-
-    scoreTemp = scoreTemp >>> 1;
-    var keyWordMatch3 = scoreTemp & 1;
-
-    return new PEConstraintScoreExtendSection(PEConstraintScore, keyWordMatch1, keyWordMatch2, keyWordMatch3, pathDepth);
-}
-
-function PEConstraintScoreExtendSection(score, keyWordMatch1, keyWordMatch2, keyWordMatch3, pathDepth) {
-    this.score = score;
-    this.keyWordMatch1 = keyWordMatch1;
-    this.keyWordMatch2 = keyWordMatch2;
-    this.keyWordMatch3 = keyWordMatch3;
-    this.pathDepth = pathDepth;
-}
 //------------------------------------------------ PEScore Decoder - End ------------------------------------------------
 
 
 //------------------------------------------------ Generate Entity Matching Feature - Begin ------------------------------------------------
-function GenerateEntityMatchingScore(entityList, matchData) {
+function GenerateEntityMatchingScore_Local(entityList, matchData) {
     var entityMatchFeature = 0;
     var entityCount = entityList.length;
 
@@ -633,7 +316,6 @@ function GenerateEntityMatchingScore(entityList, matchData) {
     var snippet = matchData.snippet;
     var wordFoundBodyArray = matchData.wordFoundBodyArray;
 
-    //LogDebug("url: "+matchData.url+"\t"+"title: "+matchData.title+"\t"+"IsPhraseMatchForTitleSnippet: "+IsPhraseMatchForTitleSnippet(entity, title)+"\t");
     for (var i = 0; i < entityCount; i++) {
         var entityItem = entityList[i];
         var entity = entityItem.text;
@@ -645,24 +327,24 @@ function GenerateEntityMatchingScore(entityList, matchData) {
                 else if (IsPhraseMatchForTitleSnippet(entity, snippet)) {
                     entityMatchFeature += c_entityMatchScore_2nd;
                 }
-                else if (EntityWordsFoundForTitleSnippet(entity, wordFoundTitleArray, title) == 1) {
+                else if (WordsFoundForTitleSnippet(entity, wordFoundTitleArray, title) == 1) {
                     entityMatchFeature += c_entityMatchScore_3rd;
                 }
-                else if (EntityWordsFoundForTitleSnippet(entity, wordFoundBodyArray, snippet) == 1) {
+                else if (WordsFoundForTitleSnippet(entity, wordFoundBodyArray, snippet) == 1) {
                     entityMatchFeature += c_entityMatchScore_4th;
                 }
             }
             else {
-                if (EntityWordsFoundForTitleSnippet(entity, wordFoundTitleArray, title) == 1) {
+                if (WordsFoundForTitleSnippet(entity, wordFoundTitleArray, title) == 1) {
                     entityMatchFeature += c_entityMatchScore_1st;
                 }
-                else if (EntityWordsFoundForTitleSnippet(entity, wordFoundBodyArray, snippet) == 1) {
+                else if (WordsFoundForTitleSnippet(entity, wordFoundBodyArray, snippet) == 1) {
                     entityMatchFeature += c_entityMatchScore_2nd;
                 }
             }
         }
         else {
-            entityMatchFeature += EntityWordsFoundForTitleSnippet(MSSFDecodeResult.entity1, wordFoundTitleArray, title);
+            entityMatchFeature += WordsFoundForTitleSnippet(MSSFDecodeResult.entity1, wordFoundTitleArray, title);
         }
     }
 
@@ -672,133 +354,16 @@ function GenerateEntityMatchingScore(entityList, matchData) {
 
     return NormalizeEntityMatchingScore(entityMatchFeature);
 }
-
-function NormalizeEntityMatchingScore(score) {
-    if (score == c_entityMatchScore_1st) {
-        return c_entityMatchScore_1st;
-    }
-    else if (score > (c_entityMatchScore_1st / 3 * 2)) {
-        return c_entityMatchScore_2nd;
-    }
-    else if (score > (c_entityMatchScore_1st / 3)) {
-        return c_entityMatchScore_3rd;
-    }
-    else if (score > 0) {
-        return c_entityMatchScore_4th;
-    }
-    else {
-        return 0;
-    }
-}
 //------------------------------------------------ Generate Entity Matching Feature - End ------------------------------------------------
 
 
-//------------------------------------------------ Generate Intent Matching Feature - Begin ------------------------------------------------
-function GenerateIntentMatchingScore(intentMatchConditionArray, intent, matchData, isIntentMatchUrl) {
-    if (IsNull(intentMatchConditionArray) || intentMatchConditionArray.length != 3) {
-        return 0;
-    }
-
-    var title = matchData.title;
-    // LogDebug(" url: "+matchData.url);
-    // LogDebug("title: " + title + "\t");
-
-    //Verify whether is condition0 match
-    var isCondition0Match = false;
-    switch (intentMatchConditionArray[0]) {
-        case 0:
-            isCondition0Match = false;
-            break;
-        case 1:
-            isCondition0Match = true;
-            break;
-        case 2:
-            if (IsArrayPhraseMatchForTitleSnippet(intent, title) || isIntentMatchUrl == 1) {
-                isCondition0Match = true;
-            }
-            else {
-                isCondition0Match = false;
-            }
-            break;
-        default:
-            isCondition0Match = false;
-            break;
-    }
-    if (isCondition0Match) {
-        return c_intentMatchScore_1st;
-    }
-
-    //Verify whether is condition1 match
-    var isCondition1Match = false;
-    // LogDebug(" url: "+matchData.url);
-    // LogDebug(" shuixincui: "+intentMatchConditionArray[1]);
-    switch (intentMatchConditionArray[1]) {
-        case 0:
-            isCondition1Match = false;
-            break;
-        case 1:
-            isCondition1Match = true;
-            break;
-        case 2:
-            // LogDebug(" shui1: "+ isIntentMatchUrl);
-            // LogDebug(" shui2: "+ intent);
-            // LogDebug(" shui3: "+ title);
-            // LogDebug(" shui4: "+ IsArrayPhraseMatchForTitleSnippet(intent, title));
-            if (IsArrayPhraseMatchForTitleSnippet(intent, title) || isIntentMatchUrl == 1) {
-                isCondition1Match = true;
-            }
-            else {
-                isCondition1Match = false;
-            }
-            break;
-        default:
-            isCondition1Match = false;
-            break;
-    }
-    //LogDebug(" shui6: "+isCondition1Match)
-    if (isCondition1Match) {
-        return c_intentMatchScore_2nd;
-    }
-
-    //LogDebug(" shuixincui: "+intentMatchConditionArray[2]);
-    //Verify whether is condition2 match
-    var isCondition2Match = false;
-    switch (intentMatchConditionArray[2]) {
-        case 0:
-            isCondition2Match = false;
-            break;
-        case 1:
-            isCondition2Match = true;
-            break;
-        case 2:
-            //LogDebug(" shui5: "+ IsArrayPhraseMatchForTitleSnippet(intent, title));
-            if (IsArrayPhraseMatchForTitleSnippet(intent, title) || isIntentMatchUrl == 1) {
-                isCondition2Match = true;
-            }
-            else {
-                isCondition2Match = false;
-            }
-            break;
-        default:
-            isCondition2Match = false;
-            break;
-    }
-    if (isCondition2Match) {
-        return c_intentMatchScore_3rd;
-    }
-    return 0;
-}
-//------------------------------------------------ Generate Intent Matching Feature - End ------------------------------------------------
-
-
 //------------------------------------------------ Generate Constraint Matching Feature - Begin ------------------------------------------------
-function GenerateConstraintMatchingScore(constraintMatchConditionArray, constraintList, matchData, authorityScore, constraintMatchUrlScore, documentPosition) {
+function GenerateConstraintMatchingScore_Local(constraintMatchConditionArray, constraintList, matchData, authorityScore, constraintMatchUrlScore, documentPosition) {
     var consMatchFeature = 0;
     var hasOpposed = false;
     var consCount = constraintList.length;
     for (var i = 0; i < consCount; i++) {
         var consMatchForOne = CalculateConstraintMatchingScoreForSingleConstraint(constraintMatchConditionArray, constraintList[i], matchData, authorityScore, constraintMatchUrlScore, documentPosition);
-        //LogDebug("----url" + matchData.url + "\t" + constraintList[i].original + "\t" + consMatchForOne + "\t");
         consMatchFeature += consMatchForOne;
         if (consMatchForOne == 1) {
             hasOpposed = true;
@@ -810,578 +375,16 @@ function GenerateConstraintMatchingScore(constraintMatchConditionArray, constrai
     else if (consCount !== 0) {
         consMatchFeature = consMatchFeature / consCount;
     }
-
-    //return NormalizeConstraintMatchingScore(consMatchFeature);
     return consMatchFeature;
 }
 
-function CalculateConstraintMatchingScoreForSingleConstraint(constraintMatchConditionArray, constraint, matchData, authorityScore, constraintMatchUrlScore, documentPosition) {
-    if (IsNull(constraintMatchConditionArray) || constraintMatchConditionArray.length != 5) {
-        return 0;
-    }
-
-    var consOri = constraint.original;
-    var consSyno = constraint.synonym;
-    var consOpposed = constraint.opposed;
-    var consExclude = constraint.exclude;
-
-    var url = matchData.url;
-    var title = matchData.title;
-    var snippet = matchData.snippet;
-    // if (url == "http://www.adamsmith.org/the-theory-of-moral-sentiments") {
-        // LogDebug(title + "\t" +snippet + "\t");
-    // }
-    var wordFoundTitleArray = matchData.wordFoundTitleArray;
-    var wordFoundBodyArray = matchData.wordFoundBodyArray;
-    //LogDebug(title + "\t" + snippet + "\t" + wordFoundTitleArray + "\t" + wordFoundBodyArray);
-    var isConsOriMatchTitle;
-    var isConsOriMatchUrl;
-    var isConsOriMatchBody;
-
-    var isConsSynoMatchTitle;
-    var isConsSynoMatchUrl;
-    var isConsSynoMatchBody;
-
-    var isConsOpposedMatchTitle;
-    var isConsOpposedMatchUrl;
-
-    var isConsExcludeMatchBody;
-
-    //Verify whether is condition0 match
-    var isCondition0Match = false;     //Opposed match
-    switch (constraintMatchConditionArray[0]) {
-        case 0:
-            isCondition0Match = false;
-            break;
-        case 1:
-            isCondition0Match = true;
-            break;
-        case 2:
-            if (IsNull(isConsOriMatchTitle)) {
-                isConsOriMatchTitle = WordsFoundForTitleSnippet(consOri, wordFoundTitleArray, title) == 1;
-            }
-            if (isConsOriMatchTitle) {
-                break;
-            }
-            if (IsNull(isConsOpposedMatchTitle)) {
-                isConsOpposedMatchTitle = IsArrayPhraseMatchForTitleSnippet(consOpposed, title);
-            }
-            if (isConsOpposedMatchTitle) {
-                isCondition0Match = true;
-            }
-            break;
-        case 3:
-            if (IsNull(isConsOriMatchTitle)) {
-                isConsOriMatchTitle = WordsFoundForTitleSnippet(consOri, wordFoundTitleArray, title) == 1;
-            }
-            if (isConsOriMatchTitle) {
-                break;
-            }
-            if (IsNull(isConsOriMatchUrl)) {
-                isConsOriMatchUrl = IsPhraseMatchForUrl(consOri, url);
-            }
-            if (isConsOriMatchUrl) {
-                break;
-            }
-            if (IsNull(isConsOpposedMatchTitle)) {
-                isConsOpposedMatchTitle = IsArrayPhraseMatchForTitleSnippet(consOpposed, title);
-            }
-            if (isConsOpposedMatchTitle) {
-                isCondition0Match = true;
-                break;
-            }
-            if (IsNull(isConsOpposedMatchUrl)) {
-                isConsOpposedMatchUrl = IsArrayPhraseMatchForUrl(consOpposed, url);
-            }
-            if (isConsOpposedMatchUrl) {
-                isCondition0Match = true;
-            }
-            break;
-        default:
-            isCondition0Match = false;
-            break;
-    }
-    if (isCondition0Match) {
-        return c_constraintMatchScoreOpposed;
-    }
-
-    //Verify whether is condition1 match
-    var isCondition1Match = false;
-    switch (constraintMatchConditionArray[1]) {
-        case 0:
-            isCondition1Match = false;
-            break;
-        case 1:
-            isCondition1Match = true;
-            break;
-        case 2:
-            if (constraintMatchUrlScore != 1 && authorityScore != c_officialSiteScore) {
-                break;
-            }
-            if (IsNull(isConsOriMatchTitle)) {
-                isConsOriMatchTitle = WordsFoundForTitleSnippet(consOri, wordFoundTitleArray, title) == 1;
-            }
-            if (isConsOriMatchTitle) {
-                isCondition1Match = true;
-                break;
-            }
-            if (IsNull(isConsSynoMatchTitle)) {
-                isConsSynoMatchTitle = IsArrayPhraseMatchForTitleSnippet(consSyno, title);
-            }
-            if (isConsSynoMatchTitle) {
-                isCondition1Match = true;
-            }
-            break;
-        case 3:
-            if (constraintMatchUrlScore != 1 && authorityScore != c_officialSiteScore) {
-                break;
-            }
-            if (IsNull(isConsOriMatchTitle)) {
-                isConsOriMatchTitle = WordsFoundForTitleSnippet(consOri, wordFoundTitleArray, title) == 1;
-            }
-            if (isConsOriMatchTitle) {
-                isCondition1Match = true;
-                break;
-            }
-            if (IsNull(isConsOriMatchUrl)) {
-                isConsOriMatchUrl = IsPhraseMatchForUrl(consOri, url);
-            }
-            if (isConsOriMatchUrl) {
-                isCondition1Match = true;
-                break;
-            }
-            if (IsNull(isConsSynoMatchTitle)) {
-                isConsSynoMatchTitle = IsArrayPhraseMatchForTitleSnippet(consSyno, title);
-            }
-            if (isConsSynoMatchTitle) {
-                isCondition1Match = true;
-                break;
-            }
-            if (IsNull(isConsSynoMatchUrl)) {
-                isConsSynoMatchUrl = IsArrayPhraseMatchForUrl(consSyno, url);
-            }
-            if (isConsSynoMatchUrl) {
-                isCondition1Match = true;
-            }
-            break;
-        default:
-            isCondition1Match = false;
-            break;
-    }
-    if (isCondition1Match) {
-        return c_constraintMatchScore_1st;
-    }
-
-    //Verify whether is condition2 match
-    var isCondition2Match = false;
-    switch (constraintMatchConditionArray[2]) {
-        case 0:
-            isCondition2Match = false;
-            break;
-        case 1:
-            isCondition2Match = true;
-            break;
-        case 2:
-            if (constraintMatchUrlScore == 1 || authorityScore == c_officialSiteScore) {
-                if (IsNull(isConsOpposedMatchTitle)) {
-                    isConsOpposedMatchTitle = IsArrayPhraseMatchForTitleSnippet(consOpposed, title);
-                }
-                if (isConsOpposedMatchTitle) {
-                    break;
-                }
-                if (IsNull(isConsExcludeMatchBody)) {
-                    isConsExcludeMatchBody = IsArrayPhraseMatchForTitleSnippet(consExclude, snippet);
-                }
-                if (isConsExcludeMatchBody) {
-                    break;
-                }
-                if (IsNull(isConsOriMatchBody)) {
-                    isConsOriMatchBody = WordsFoundForTitleSnippet(consOri, wordFoundBodyArray, snippet) == 1;
-                }
-                if (isConsOriMatchBody) {
-                    isCondition2Match = true;
-                    break;
-                }
-                if (IsNull(isConsSynoMatchBody)) {
-                    isConsSynoMatchBody = IsArrayPhraseMatchForTitleSnippet(consSyno, snippet);
-                }
-                if (isConsSynoMatchBody) {
-                    isCondition2Match = true;
-                    break;
-                }
-            }
-            else if (constraintMatchUrlScore == 2) {
-                if (IsNull(isConsOriMatchTitle)) {
-                    isConsOriMatchTitle = WordsFoundForTitleSnippet(consOri, wordFoundTitleArray, title) == 1;
-                }
-                if (isConsOriMatchTitle) {
-                    isCondition2Match = true;
-                    break;
-                }
-                if (IsNull(isConsSynoMatchTitle)) {
-                    isConsSynoMatchTitle = IsArrayPhraseMatchForTitleSnippet(consSyno, title);
-                }
-                if (isConsSynoMatchTitle) {
-                    isCondition2Match = true;
-                    break;
-                }
-            }
-            break;
-        case 3:
-            if (constraintMatchUrlScore == 1 || authorityScore == c_officialSiteScore) {
-                if (IsNull(isConsOpposedMatchTitle)) {
-                    isConsOpposedMatchTitle = IsArrayPhraseMatchForTitleSnippet(consOpposed, title);
-                }
-                if (isConsOpposedMatchTitle) {
-                    break;
-                }
-                if (IsNull(isConsOpposedMatchUrl)) {
-                    isConsOpposedMatchUrl = IsArrayPhraseMatchForUrl(consOpposed, url);
-                }
-                if (isConsOpposedMatchUrl) {
-                    break;
-                }
-                if (IsNull(isConsExcludeMatchBody)) {
-                    isConsExcludeMatchBody = IsArrayPhraseMatchForTitleSnippet(consExclude, snippet);
-                }
-                if (isConsExcludeMatchBody) {
-                    break;
-                }
-                if (IsNull(isConsOriMatchBody)) {
-                    isConsOriMatchBody = WordsFoundForTitleSnippet(consOri, wordFoundBodyArray, snippet) == 1;
-                }
-                if (isConsOriMatchBody) {
-                    isCondition2Match = true;
-                    break;
-                }
-                if (IsNull(isConsSynoMatchBody)) {
-                    isConsSynoMatchBody = IsArrayPhraseMatchForTitleSnippet(consSyno, snippet);
-                }
-                if (isConsSynoMatchBody) {
-                    isCondition2Match = true;
-                    break;
-                }
-            }
-            else if (constraintMatchUrlScore == 2) {
-                if (IsNull(isConsOriMatchTitle)) {
-                    isConsOriMatchTitle = WordsFoundForTitleSnippet(consOri, wordFoundTitleArray, title) == 1;
-                }
-                if (isConsOriMatchTitle) {
-                    isCondition2Match = true;
-                    break;
-                }
-                if (IsNull(isConsOriMatchUrl)) {
-                    isConsOriMatchUrl = IsPhraseMatchForUrl(consOri, url);
-                }
-                if (isConsOriMatchUrl) {
-                    isCondition2Match = true;
-                    break;
-                }
-                if (IsNull(isConsSynoMatchTitle)) {
-                    isConsSynoMatchTitle = IsArrayPhraseMatchForTitleSnippet(consSyno, title);
-                }
-                if (isConsSynoMatchTitle) {
-                    isCondition2Match = true;
-                    break;
-                }
-                if (IsNull(isConsSynoMatchUrl)) {
-                    isConsSynoMatchUrl = IsArrayPhraseMatchForUrl(consSyno, url);
-                }
-                if (isConsSynoMatchUrl) {
-                    isCondition2Match = true;
-                    break;
-                }
-            }
-            break;
-        default:
-            isCondition2Match = false;
-            break;
-    }
-    if (isCondition2Match) {
-        return c_constraintMatchScore_2nd;
-    }
-
-    //Verify whether is condition3 match
-    var isCondition3Match = false;
-    // if ( url == "http://www.adamsmith.org/the-theory-of-moral-sentiments") {
-        // LogDebug("&&&&&&"+constraintMatchConditionArray[3]);
-    // }
-    
-    switch (constraintMatchConditionArray[3]) {
-        case 0:
-            isCondition3Match = false;
-            break;
-        case 1:
-            isCondition3Match = true;
-            break;
-        case 2:
-            if (documentPosition >= 5) {
-                break;
-            }
-            if (IsNull(isConsOriMatchTitle)) {
-                isConsOriMatchTitle = WordsFoundForTitleSnippet(consOri, wordFoundTitleArray, title) == 1;
-            }
-            if (isConsOriMatchTitle) {
-                isCondition3Match = true;
-                break;
-            }
-            if (IsNull(isConsSynoMatchTitle)) {
-                isConsSynoMatchTitle = IsArrayPhraseMatchForTitleSnippet(consSyno, title);
-            }
-            if (isConsSynoMatchTitle) {
-                isCondition3Match = true;
-            }
-            break;
-        case 3:
-            // if ( url == "http://www.adamsmith.org/the-theory-of-moral-sentiments") {
-                // LogDebug("****pos" + documentPosition);
-            // }
-            if (documentPosition >= 5) {
-                break;
-            }
-            if (IsNull(isConsOriMatchTitle)) {
-                isConsOriMatchTitle = WordsFoundForTitleSnippet(consOri, wordFoundTitleArray, title) == 1;
-            }
-            if (isConsOriMatchTitle) {
-                isCondition3Match = true;
-                break;
-            }
-            if (IsNull(isConsOriMatchUrl)) {
-                isConsOriMatchUrl = IsPhraseMatchForUrl(consOri, url);
-            }
-            if (isConsOriMatchUrl) {
-                isCondition3Match = true;
-                break;
-            }
-            if (IsNull(isConsSynoMatchTitle)) {
-                isConsSynoMatchTitle = IsArrayPhraseMatchForTitleSnippet(consSyno, title);
-            }
-            if (isConsSynoMatchTitle) {
-                isCondition3Match = true;
-            }
-            if (IsNull(isConsSynoMatchUrl)) {
-                isConsSynoMatchUrl = IsArrayPhraseMatchForUrl(consSyno, url);
-            }
-            if (isConsSynoMatchUrl) {
-                isCondition3Match = true;
-            }
-            break;
-        default:
-            isCondition3Match = false;
-            break;
-    }
-    
-    // if ( url == "http://www.ibiblio.org/ml/libri/s/smitha_moralsentiments_p.pdf") {
-        // LogDebug("****" + isConsOriMatchTitle + isConsOriMatchUrl);
-    // }
-    if (isCondition3Match) {
-        return c_constraintMatchScore_3rd;
-    }
-
-    //Verify whether is condition4 match
-    var isCondition4Match = false;
-    switch (constraintMatchConditionArray[4]) {
-        case 0:
-            isCondition4Match = false;
-            break;
-        case 1:
-            isCondition4Match = true;
-            break;
-        case 2:
-            if (documentPosition >= 5) {
-                break;
-            }
-            if (IsNull(isConsOpposedMatchTitle)) {
-                isConsOpposedMatchTitle = IsArrayPhraseMatchForTitleSnippet(consOpposed, title);
-            }
-            if (isConsOpposedMatchTitle) {
-                break;
-            }
-            if (IsNull(isConsExcludeMatchBody)) {
-                isConsExcludeMatchBody = IsArrayPhraseMatchForTitleSnippet(consExclude, snippet);
-            }
-            if (isConsExcludeMatchBody) {
-                break;
-            }
-            if (IsNull(isConsOriMatchBody)) {
-                isConsOriMatchBody = WordsFoundForTitleSnippet(consOri, wordFoundBodyArray, snippet) == 1;
-            }
-            if (isConsOriMatchBody) {
-                isCondition4Match = true;
-                break;
-            }
-            if (IsNull(isConsSynoMatchBody)) {
-                isConsSynoMatchBody = IsArrayPhraseMatchForTitleSnippet(consSyno, snippet);
-            }
-            if (isConsSynoMatchBody) {
-                isCondition4Match = true;
-                break;
-            }
-            break;
-        case 3:
-            if (documentPosition >= 5) {
-                break;
-            }
-            if (IsNull(isConsOpposedMatchTitle)) {
-                isConsOpposedMatchTitle = IsArrayPhraseMatchForTitleSnippet(consOpposed, title);
-            }
-            if (isConsOpposedMatchTitle) {
-                break;
-            }
-            if (IsNull(isConsOpposedMatchUrl)) {
-                isConsOpposedMatchUrl = IsArrayPhraseMatchForUrl(consOpposed, url);
-            }
-            if (isConsOpposedMatchUrl) {
-                break;
-            }
-            if (IsNull(isConsExcludeMatchBody)) {
-                isConsExcludeMatchBody = IsArrayPhraseMatchForTitleSnippet(consExclude, snippet);
-            }
-            if (isConsExcludeMatchBody) {
-                break;
-            }
-            if (IsNull(isConsOriMatchBody)) {
-                isConsOriMatchBody = WordsFoundForTitleSnippet(consOri, wordFoundBodyArray, snippet) == 1;
-            }
-            if (isConsOriMatchBody) {
-                isCondition4Match = true;
-                break;
-            }
-            if (IsNull(isConsSynoMatchBody)) {
-                isConsSynoMatchBody = IsArrayPhraseMatchForTitleSnippet(consSyno, snippet);
-            }
-            if (isConsSynoMatchBody) {
-                isCondition4Match = true;
-                break;
-            }
-            break;
-        default:
-            isCondition4Match = false;
-            break;
-    }
-    if (isCondition4Match) {
-        return c_constraintMatchScore_4th;
-    }
-    return 0;
-}
-
-function NormalizeConstraintMatchingScore(score) {
-    if (score == c_constraintMatchScore_1st) {
-        return c_constraintMatchScore_1st;
-    }
-    else if (score > (c_constraintMatchScore_1st / 3 * 2)) {
-        return c_constraintMatchScore_2nd;
-    }
-    else if (score > (c_constraintMatchScore_1st / 3)) {
-        return c_constraintMatchScore_3rd;
-    }
-    else if (score > 1) {
-        return c_constraintMatchScore_4th;
-    }
-    else if (score == c_constraintMatchScoreOpposed) {
-        return c_constraintMatchScoreOpposed;
-    }
-    else {
-        return 0;
-    }
-}
 //------------------------------------------------ Generate Constraint Matching Feature - End ------------------------------------------------
-
-
-//------------------------------------------------ Generate Authority Score Feature - Begin ------------------------------------------------
-function GenerateAuthorityScore(authorityScoreTemp, entityList, siteConstraint, url, hostId, domainId, officialSiteCondition, documentPosition) {
-    var domain = GetDomainNameFromUrl(url);
-
-    if (documentPosition < c_officialSiteDPThres && (IsOfficialSite1(entityList, domain) || IsOfficialSite2(hostId, domainId, officialSiteCondition))) {
-        return c_officialSiteScore;
-    }
-    else if (IsSiteConstraintMatch(siteConstraint, domain)) {
-        return authorityScoreTemp + c_officialSiteScore + 1;
-    }
-    else {
-        return authorityScoreTemp;
-    }
-}
-
-function IsOfficialSite1(entityList, domain) {
-    if (IsNull(entityList) || entityList.length != 1) {
-        return false;
-    }
-    var entity = entityList[0].text;
-    return IsSpanMatchDomain(entity, domain);
-}
-
-function IsOfficialSite2(hostId, domainId, officialSiteCondition) {
-    var isOfficialSite = false;
-    for (var i = 0, len = officialSiteCondition.length; i < len; i++) {
-        var curOfficialSiteCondition = officialSiteCondition[i];
-        if (curOfficialSiteCondition.hostId !== "") {
-            if (curOfficialSiteCondition.hostId == hostId) {
-                isOfficialSite = true;
-            }
-        }
-        else {
-            if (curOfficialSiteCondition.domainId == domainId) {
-                isOfficialSite = true;
-            }
-        }
-        if (isOfficialSite) {
-            break;
-        }
-    }
-    return isOfficialSite;
-}
-
-function GetDomainNameFromUrl(url) {
-    var domain;
-    if (url.indexOf("://") > -1) {
-        domain = url.split('/')[2];
-    }
-    else {
-        domain = url.split('/')[0];
-    }
-    return domain.split(':')[0];
-}
-
-function IsSiteConstraintMatch(siteConstraint, domain) {
-    var isMatch = false;
-    for (var i = 0, len = siteConstraint.length; i < len; i++) {
-        if (IsSpanMatchDomain(siteConstraint[i], domain)) {
-            isMatch = true;
-            break;
-        }
-    }
-    return isMatch;
-}
-
-function IsSpanMatchDomain(span, domain) {
-    domain = " " + domain.replace(/\./g, ' ') + " ";
-    if (domain.indexOf(" " + span + " ") != -1) {
-        return true;
-    }
-    if (domain.indexOf(" " + span.replace(/\s/g, '') + " ") != -1) {
-        return true;
-    }
-    return false;
-}
-//------------------------------------------------ Generate Authority Score Feature - End ------------------------------------------------
-
-
-//------------------------------------------------ Generate Guarding Score Feature - Begin ------------------------------------------------
-function GenerateGuardingScore(GuardingUrlScore, guardingkeyword, matchData) {
-    if (GuardingUrlScore == 100 || IsArrayPhraseMatchForTitleSnippet(guardingkeyword, matchData.title)) {
-        return c_guardingScore;
-    }
-    return 0;
-}
-//------------------------------------------------ Generate Guarding Score Feature - End ------------------------------------------------
-
 
 //------------------------------------------------ Main Ranker - Begin ------------------------------------------------
 function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArray, intentMatchCondition, constraintMatchCondition, documentsLocal, documentCount) {
     var keyFeaturesOfDocuments = [];
-    var docCount = documentCount;
-    var top20doc = Math.min(docCount, 20);
+    //var docCount = documentCount;
+    var top20doc = Math.min(documentCount, 20);
     var i, curDoc, featureVector, matchData, url;
     var entityMatchScoreArray = new Array(0, 0, 0);
     var entityMatchScoreThreshold = 0;
@@ -1394,7 +397,6 @@ function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArra
     }
     var maxDRScore = 0;
     var maxDRScorePos = 0;
-    //LogDebug("IsTrigger before Condition1" + isTrigger);
     for (i = 0; i < top20doc; ++i) {
         if (i == 3) {
             entityMatchScoreArray.sort(SortNumberDesc);
@@ -1412,16 +414,10 @@ function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArra
         featureVector = curDoc.rerankfeatures;
         matchData = matchDataArray[i];
         url = matchData.url;
-        var entityMatchScore = GenerateEntityMatchingScore(MSSFDecodeResult.entity, matchData);
-        // LogDebug(" url: "+url+"\t");
-        // LogDebug("featureVector[c_FeatureId_PEScoreTopSite]:"+featureVector[c_FeatureId_PEScoreTopSite]+"\t");
-        var topSiteScoreResult = PETopSiteScoreDecode(featureVector[c_FeatureId_PEScoreTopSite], MSSFDecodeResult.urlKeyword, url, featureVector[c_FeatureId_UrlDepth]);
-        //LogDebug(" Document "+i);
-        //LogDebug(" topSiteScoreResult: "+ topSiteScoreResult.authorityScore);
+        var entityMatchScore = GenerateEntityMatchingScore_Local(MSSFDecodeResult.entity, matchData);
+        var topSiteScoreResult = PETopSiteScoreDecode_Local(featureVector[c_FeatureId_PEScoreTopSite], MSSFDecodeResult.urlKeyword, url, featureVector[c_FeatureId_UrlDepth]);
         var authorityScore = GenerateAuthorityScore(topSiteScoreResult.authorityScore, MSSFDecodeResult.entity, MSSFDecodeResult.siteConstraint, url, curDoc.hostid, curDoc.domainid, MSSFDecodeResult.officialSite, i);
-        //if (matchData.title.indexOf("official") > -1) {
-        //    authorityScore = c_officialSiteScore;
-        //}
+        
         var specificSiteScore = topSiteScoreResult.isSpecific;
         keyFeaturesOfDocuments.push(new KeyFeatures(entityMatchScore, 0, authorityScore, specificSiteScore, 0, 0, topSiteScoreResult));
         
@@ -1439,23 +435,21 @@ function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArra
         }
     }
     
-    LogDebug("IsTrigger Condition1" + isTrigger);
+    LogDebug("IsTrigger Condition1:" + isTrigger + "\t");
+    
     if (!isTrigger) {
-        for (i = 0; i < docCount; ++i) {
-            documents[i].score = 1000.0 - i;
-        }
+        AssignAbstentionSegmentScore();
         return;
     }
     
     // Trigger Condition 2
     var entityMatchingScoreDRScoreTop1 = keyFeaturesOfDocuments[maxDRScorePos].entityMatchScore;
     if (entityMatchingScoreDRScoreTop1 < entityMatchScoreThreshold) {
-        for (i = 0; i < docCount; ++i) {
-            documents[i].score = 1000.0 - i;
-        }
+        AssignAbstentionSegmentScore();
         return;
     }
-    LogDebug("IsTrigger Condition2" + isTrigger);
+    LogDebug("IsTrigger Condition2:" + isTrigger + "\t");
+    
     // Trigger Condition 3
     var specificSiteCountInTop5 = 0;
     var entityMatchCountInTop10 = 0;
@@ -1474,16 +468,11 @@ function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArra
         }
     }
     var isKnownQuery = false;
-    if ((subIntentId != "402" && subIntentScore >= 100) || entityMatchCountInTop10 == 10) {
+    if ((subIntentId != c_SubIntentId_BookOthers && subIntentScore >= 100)) {
         isKnownQuery = true;
     }
-    
-    // if (specificSiteCountInTop5 >= 2) {
-        // isTrigger = true;
-    // }
-    // else {
-        // isTrigger = false;
-    // }
+    LogDebug("entityMatchCountInTop10:" + entityMatchCountInTop10 + "\t")
+
     
     isTrigger = false;
     if (!isTrigger && isKnownQuery) {
@@ -1491,10 +480,7 @@ function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArra
             isTrigger = true;
         }
         else {
-            for (i = 0; i < docCount; ++i) {
-                documents[i].score = 1000.0 - i;
-            }
-            return;
+            AssignAbstentionSegmentScore();
         }
     }
     for (i = 0; i < top20doc; ++i) {
@@ -1504,20 +490,10 @@ function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArra
         url = matchData.url;
 
         var topSiteScoreResult = keyFeaturesOfDocuments[i].topSiteScoreResult;
-        if (subIntentId == c_SubIntentId_BookOthers.toString() || subIntentId == c_SubIntentId_BookSingleEntity.toString()) {
-            var tmp = c_intentMatchScore_2nd;
-            var intentMatchScore = tmp;
-        }
-        else {
-            var intentMatchScore = GenerateIntentMatchingScore(intentMatchCondition, MSSFDecodeResult.intent, matchData, topSiteScoreResult.isIntent);
-        }
-        //var intentMatchScore = GenerateIntentMatchingScore(intentMatchCondition, MSSFDecodeResult.intent, matchData, topSiteScoreResult.isIntent);
-        //LogDebug(" url: "+matchData.url+"\t"+" intentMatchScore: "+ intentMatchScore+"\t"+" subIntentId: "+subIntentId+"\t");
+        var intentMatchScore = GenerateIntentMatchingScore(intentMatchCondition, MSSFDecodeResult.intent, matchData, topSiteScoreResult.isIntent);
+        
         var lowQualitySiteScore = featureVector[c_FeatureId_PEScoreLowQuality];
-        //if (url.indexOf(".co.uk") > -1) {
-        //    lowQualitySiteScore = 1;
-        //}
-        //LogDebug("--------------"+lowQualitySiteScore+"\t");
+        
         var guardingScore = GenerateGuardingScore(featureVector[c_FeatureId_PEScoreGuarding], MSSFDecodeResult.guardingkeyword, matchData);
 
         keyFeaturesOfDocuments[i].intentMatchScore = intentMatchScore;
@@ -1526,35 +502,25 @@ function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArra
     }
     drScoreArray.sort(SortNumberDesc);
     var drScoreThreshold = drScoreArray[16];
+    LogDebug("IsTrigger:" + isTrigger + "\t");
+    LogDebug("isKnownQuery:" + isKnownQuery + "\t");
+    LogDebug("IsTriggerForUnKnownQuery:" + IsTriggerForUnKnownQuery(keyFeaturesOfDocuments, specificSiteCountInTop5, entityMatchScoreThreshold, matchDataArray) + "\t");
     
-    LogDebug("IsTrigger:" + isTrigger);
-    LogDebug("isKnownQuery:" + isKnownQuery);
-    LogDebug("IsTriggerForUnKnownQuery:" + IsTriggerForUnKnownQuery(keyFeaturesOfDocuments, specificSiteCountInTop5, entityMatchScoreThreshold));
-    if (isTrigger || (!isKnownQuery && IsTriggerForUnKnownQuery(keyFeaturesOfDocuments, specificSiteCountInTop5, entityMatchScoreThreshold))) {
-        // for (i = 0; i < matchDataArray.length; i++) {
-            // LogDebug("@@@" + i + "\t" + matchDataArray[i].url);
-        // }
+    if (isTrigger || (!isKnownQuery && IsTriggerForUnKnownQuery(keyFeaturesOfDocuments, specificSiteCountInTop5, entityMatchScoreThreshold, matchDataArray))) {     
         // Get not-guarding documents
-        MSSFDecodeResult = PostWebSlotTagging(MSSFDecodeResult, wordDropQuery, matchDataArray);
+        MSSFDecodeResult = PostWebSlotTagging_Local(MSSFDecodeResult, wordDropQuery, matchDataArray);
         var rankVector = [];
         var rankVectorInOriPlace = [];
         var guardVector = [];
-        for (i = 0; i < docCount; ++i) {
-            //LogDebug(matchDataArray[i].url+keyFeaturesOfDocuments[i].entityMatchScore+IsGuard(keyFeaturesOfDocuments[i], documentsLocal[i].rerankfeatures, i, entityMatchScoreThreshold, documentsLocal[i].l2score, maxDRScore)+"\t");
+        for (i = 0; i < top20doc; ++i) {           
             if (!IsGuard(keyFeaturesOfDocuments[i], documentsLocal[i].rerankfeatures, i, entityMatchScoreThreshold, documentsLocal[i].l2score, maxDRScore)) {
                 rankVector.push({ index: i, signal: 0.0 });
-                rankVectorInOriPlace.push({ index: i });
-                //LogDebug("$$$false");
+                rankVectorInOriPlace.push({ index: i });        
             }
             else {
-                documents[i].score = 1000.0 - i;
-                guardVector.push({ index: i, signal: 0.0 });
-                LogDebug("$$$true" + i);
-            }
-            // if (matchDataArray[i].url == "http://www.adamsmith.org/the-theory-of-moral-sentiments") {
-                // for (var j = 0; j < rankVector.length; j++)
-                    // LogDebug("@@@" + rankVector[j].index);
-            // }
+                //documents[i].score = 1000.0 - i;
+                guardVector.push({ index: i, signal: 0.0 });             
+            }         
         }
 
         var scoringVector = rankVector.concat(guardVector);
@@ -1565,16 +531,13 @@ function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArra
             var curKeyFeatures = keyFeaturesOfDocuments[curIndex];
             var curDoc = documentsLocal[curIndex];
             var curRerankFeatures = curDoc.rerankfeatures;
-            var cureMatchData = matchDataArray[curIndex];
-            //LogDebug("curDoc.l2score: "+curDoc.l2score+"\t"+"drScoreThreshold: "+drScoreThreshold+"\t"+"curKeyFeatures.lowQualitySiteScore: "+curKeyFeatures.lowQualitySiteScore+"\t"+"curKeyFeatures.authorityScore: "+curKeyFeatures.authorityScore+"\t"+"c_officialSiteScore: "+c_officialSiteScore+"\t"+"c_FeatureId_PEScoreDiversity: "+c_FeatureId_PEScoreDiversity+"\t"+"curRerankFeatures[c_FeatureId_PEScoreDiversity]: "+curRerankFeatures[c_FeatureId_PEScoreDiversity]+"\t");
+            var cureMatchData = matchDataArray[curIndex];           
             if (curDoc.l2score > drScoreThreshold && (curKeyFeatures.lowQualitySiteScore === 0 || curKeyFeatures.authorityScore > c_officialSiteScore || curRerankFeatures[c_FeatureId_PEScoreDiversity] > 0)) {
-                scoringVector[i].signal = NormalizeRankScore(SCORING(MSSFDecodeResult, curKeyFeatures, curRerankFeatures, cureMatchData, entityMatchScoreThreshold, constraintMatchCondition, curIndex), curIndex);
+                scoringVector[i].signal = SCORING(MSSFDecodeResult, curKeyFeatures, curRerankFeatures, cureMatchData, entityMatchScoreThreshold, constraintMatchCondition, curIndex);
             }
             else {
-                scoringVector[i].signal = NormalizeRankScore(100.0, curIndex);
-            }
-            
-            LogDebug("%%%"+matchDataArray[curIndex].url+scoringVector[i].signal);
+                scoringVector[i].signal = c_baseFusionScore;
+            }      
         }
 
         // For each host, only keep the highest score document
@@ -1599,48 +562,42 @@ function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArra
             hostId = documentsLocal[rankVector[i].index].hostid;
             if (!IsNull(hostScoreMapping[hostId]) && !(curKeyFeatures.authorityScore >= c_officialSiteScore || curRerankFeatures[c_FeatureId_PEScoreDiversity] > 0)) {
                 if (scoringVector[i].signal < hostScoreMapping[hostId]) {
-                    rankVector[i].signal = NormalizeRankScore(100.0, rankVector[i].index);
+                    rankVector[i].signal = c_baseFusionScore;
                 }
                 else {
                     rankVector[i].signal = scoringVector[i].signal;
                 }
             }
         }
-        rankVector.sort(SortDescending);
+        rankVector.sort(SortSignalDescending);
+        var currGuardCount=0;
+        var guardDocLength=guardVector.length;
         for (i = 0; i < rankDocLength; ++i) {
-            LogDebug("^^^"+rankVector[i].index+"\t"+rankVector[i].signal);
+            documents[rankVector[i].index].score = rankVector[i].signal;
+            if(currGuardCount<guardDocLength){
+                while(rankVectorInOriPlace[i].index > guardVector[currGuardCount].index){
+                    documents[guardVector[currGuardCount].index].score=rankVector[i].signal;
+                    currGuardCount++;
+                    if(currGuardCount>=guardDocLength) break;
+                }
+            }
         }
-        for (i = 0; i < rankDocLength; ++i) {
-            documents[rankVector[i].index].score = 1000.0 - rankVectorInOriPlace[i].index;
+        for(;currGuardCount<guardDocLength;currGuardCount++){
+            documents[guardVector[currGuardCount].index].score=c_baseFusionScore;
+        }
+        for(i = top20doc; i < documentCount; i++){
+            documents[i].score=c_baseFusionScore;
         }
     }
     else {
-        for (i = 0; i < docCount; ++i) {
-            documents[i].score = 1000.0 - i;
-        }
+        AssignAbstentionSegmentScore();
     }
-    
-    // for (i = 0; i < top10doc; ++i) {
-        // LogDebug("document "+i);
-        // LogDebug(" entityMatchScore: "+keyFeaturesOfDocuments[i].entityMatchScore);
-        // LogDebug(" url: "+matchDataArray[i].url);
-        // LogDebug("  "+i);
-        // LogDebug(" authorityScore: "+keyFeaturesOfDocuments[i].authorityScore);
-        // LogDebug(" score: "+documents[i].score);
-        // LogDebug(" intentMatchScore: "+keyFeaturesOfDocuments[i].intentMatchScore);
-        // LogDebug(" lowQualitySiteScore: "+keyFeaturesOfDocuments[i].lowQualitySiteScore);
-        // LogDebug(" guardingScore:"+keyFeaturesOfDocuments[i].guardingScore);
-        // LogDebug("\n");
-    // }
 }
 
 function IsGuard(keyFeatures, rerankFeatures, documentPosition, entityMatchScoreThreshold, l2score, maxDRScore) {
-    // if (rerankFeatures[c_FeatureId_RankomaticScore] >= 5) {
-        // return true;
-    // }
-    // if (documentPosition == 0 && markers[c_MarkerId_NumberOfPerfectMatches_BingClick] > 0) {
-        // return true;
-    // }
+    if (rerankFeatures[c_FeatureId_RankomaticScore] >= 5) {
+        return true;
+    }
     if (documentPosition == 0 && rerankFeatures[c_FeatureId_UrlDepth] == 0) {
         return true;
     }
@@ -1648,7 +605,7 @@ function IsGuard(keyFeatures, rerankFeatures, documentPosition, entityMatchScore
         return true;
     }
     
-    if (keyFeatures.entityMatchScore >= entityMatchScoreThreshold && ((keyFeatures.intentMatchScore === 0 && subIntentId == "402") || (subIntentId == "401" && keyFeatures.intentMatchScore == c_intentMatchScore_2nd)) && keyFeatures.constraintMatchScore !== c_constraintMatchScoreOpposed && keyFeatures.lowQualitySiteScore === 0 && (keyFeatures.guardingScore === c_guardingScore || keyFeatures.authorityScore > c_officialSiteScore) && documentPosition < 5) {
+    if (keyFeatures.entityMatchScore >= entityMatchScoreThreshold && ((keyFeatures.intentMatchScore === 0 && subIntentId == c_SubIntentId_BookOthers) || (subIntentId == c_SubIntentId_BookSingleEntity && keyFeatures.intentMatchScore == c_intentMatchScore_2nd)) && keyFeatures.constraintMatchScore !== c_constraintMatchScoreOpposed && keyFeatures.lowQualitySiteScore === 0 && (keyFeatures.guardingScore === c_guardingScore || keyFeatures.authorityScore > c_officialSiteScore) && documentPosition < 5) {
         return true;
     }
     return false;
@@ -1658,10 +615,7 @@ function IsTriggerForKnownQuery(entityMatchCountInTop20) {
     return entityMatchCountInTop20 >= 5;
 }
 
-function IsTriggerForUnKnownQuery(keyFeaturesOfDocuments, specificSiteCountInTop5, entityMatchScoreThreshold) {
-    // if (specificSiteCountInTop5 == 0) {
-        // return false;
-    // }
+function IsTriggerForUnKnownQuery(keyFeaturesOfDocuments, specificSiteCountInTop5, entityMatchScoreThreshold, matchDataArray) {
     var goodSiteCountInTop10 = 0;
     var authoritySiteCountInTop5 = 0;
     var length = Math.min(documentCount, 10);
@@ -1671,134 +625,84 @@ function IsTriggerForUnKnownQuery(keyFeaturesOfDocuments, specificSiteCountInTop
         }
         
         if (i < 5) {
-            if (keyFeaturesOfDocuments[i].authorityScore == 8 || keyFeaturesOfDocuments[i].authorityScore == 6) {
+            LogDebug("authorityScore:"+keyFeaturesOfDocuments[i].authorityScore+"\t");
+            url = matchDataArray[i].url;
+            if (keyFeaturesOfDocuments[i].authorityScore == 8 || keyFeaturesOfDocuments[i].authorityScore == 6 || (url.indexOf("amazon.com") != -1 && url.indexOf("/dp/") != -1)) {
                 authoritySiteCountInTop5++;
             }
         }
     }
+    
+    LogDebug("goodSiteCountInTop10:"+goodSiteCountInTop10+"\t"+"authoritySiteCountInTop5:"+authoritySiteCountInTop5+"\t");
     return goodSiteCountInTop10 >= 1 && authoritySiteCountInTop5 >= 1;
 }
 
 function SCORING(MSSFDecodeResult, keyFeatures, rerankFeatures, matchData, entityMatchScoreThreshold, constraintMatchCondition, documentPosition) {
-    var score = 0.0;
+    var score = c_baseFusionScore;
 
     var entityMatchScore = keyFeatures.entityMatchScore;
     var intentMatchScore = keyFeatures.intentMatchScore;
     var authorityScore = keyFeatures.authorityScore;
 
-    //LogDebug(" url: "+matchData.url+"\t"+"entityMatchScore: "+entityMatchScore+"\t"+"intentMatchScore: "+intentMatchScore+"\t"+"c_intentMatchScore_3rd: "+c_intentMatchScore_3rd+"\t");
     if (entityMatchScore > 0 && intentMatchScore >= c_intentMatchScore_3rd) {
         var url = matchData.url;
         var constraintMatchUrlScore = PEConstraintScoreDecode(rerankFeatures[c_FeatureId_PEScoreConstraint], MSSFDecodeResult.urlKeyword, url, rerankFeatures[c_FeatureId_UrlDepth]);
-        var constraintMatchScore = GenerateConstraintMatchingScore(constraintMatchCondition, MSSFDecodeResult.constraint, matchData, authorityScore, constraintMatchUrlScore, documentPosition);
-        //LogDebug(" url: "+matchData.url+"\t"+"constraintMatchScore: "+constraintMatchScore+"\t"+"title: "+matchData.title+"\t"+"snip: "+matchData.snippet+"\t"+"c_constraintMatchScoreOpposed: "+c_constraintMatchScoreOpposed+"\t");
+        var constraintMatchScore = GenerateConstraintMatchingScore_Local(constraintMatchCondition, MSSFDecodeResult.constraint, matchData, authorityScore, constraintMatchUrlScore, documentPosition);
+
         if (constraintMatchScore != c_constraintMatchScoreOpposed) {
             if (entityMatchScore >= entityMatchScoreThreshold) {
-                score += c_entityMatchScore_1st;
+                score += 4*c_entityMatchFusionScore;
             }
-            else {
-                score += entityMatchScore;
+            else if (entityMatchScore >= c_entityMatchScore_1st){
+                score += 4*c_entityMatchFusionScore;
             }
-            score += intentMatchScore;
-            score += authorityScore;
-            if (authorityScore > 0 && authorityScore != c_officialSiteScore) {
-                score += 91;
+            else if (entityMatchScore >= c_entityMatchScore_2nd){
+                score += 3*c_entityMatchFusionScore;
+            }
+            else if (entityMatchScore >= c_entityMatchScore_3rd){
+                score += 2*c_entityMatchFusionScore;
+            }
+            else if (entityMatchScore >= c_entityMatchScore_4th){
+                score += c_entityMatchFusionScore;
+            }
+            score += c_intentMatchFusionScore;
+            if (authorityScore >= 24) {
+                score += 4*c_authorityFusionScore;
+            }
+            else if (authorityScore >= 16) {
+                score += 3*c_authorityFusionScore;
+            }
+            else if (authorityScore >= 4) {
+                score += 2*c_authorityFusionScore;
+            }
+            else if (authorityScore >= 1) {
+                score += 1*c_authorityFusionScore;
             }
 
             
             if (keyFeatures.contentQualityScore > 0) {
-                score += 1000;
+                score += 1*c_authorityFusionScore;
                 if (constraintMatchScore >= c_constraintMatchScore_4th)
-                    score += constraintMatchScore;
+                    score += c_constraintMatchFusionScore;
             }
-            LogDebug("@@@url: "+matchData.url+"\t"+ score + "\t" + entityMatchScore + "\t" + intentMatchScore + "\t" + constraintMatchScore);
+            
             return score;
         }
     }
-    return 100.0;
+    return c_baseFusionScore;
 }
 
-function SortDescending(a, b) {
-    return b.signal - a.signal;
-}
-
-function NormalizeRankScore(score, index) {
-    return score * 100 + (100 - index);
-}
-
-function KeyFeatures(entityMatchScore, intentMatchScore, authorityScore, specificSiteScore, guardingScore, lowQualitySiteScore, topSiteScoreResult) {
-    this.entityMatchScore = entityMatchScore;
-    this.intentMatchScore = intentMatchScore;
-    this.authorityScore = authorityScore;
-    this.specificSiteScore = specificSiteScore;
-    this.guardingScore = guardingScore;
-    this.lowQualitySiteScore = lowQualitySiteScore;
-    this.contentQualityScore = 1000;
-    this.topSiteScoreResult = topSiteScoreResult;
-}
-
-function MatchData(title, url, snippet, wordFoundTitleArray, wordFoundBodyArray) {
-    this.title = title;
-    this.url = url;
-    this.snippet = snippet;
-    this.wordFoundTitleArray = wordFoundTitleArray;
-    this.wordFoundBodyArray = wordFoundBodyArray;
+function AssignAbstentionSegmentScore() {
+    for (i=0; i<documentCount; i++) {
+        var doc=documents[i];
+        doc.score = c_baseFusionScore;
+    }
 }
 //------------------------------------------------ Main Ranker - End ------------------------------------------------
 
 
 //------------------------------------------------ Utilities - Begin ------------------------------------------------
-function IsNull(obj) {
-    return obj === null || typeof (obj) == "undefined";
-}
-
-function StreamNormalization(stream) {
-    var newStream = [];
-    var j = 0;
-    var len = Math.min(stream.length, c_maxCaptionCharLength);
-    for (var i = 0; i < len; i++) {
-        var ch = stream.charCodeAt(i);
-        if ((ch >= 97 && ch <= 122) || (ch >= 48 && ch <= 57)) {
-            newStream[j++] = ch;
-        }
-        else if (ch >= 65 && ch <= 90) {
-            newStream[j++] = ch + 32;
-        }
-        else {
-            if(j>0 && newStream[j-1] != 32)
-            {
-                newStream[j++] = 32;
-            }
-        }
-    }
-    return String.fromCharCode.apply(this, newStream);
-}
-
-function IsPhraseMatchForTitleSnippet(phrase, stream) {
-    if (IsNull(phrase) || phrase === "" || IsNull(stream))
-        return false;
-    return (" " + stream + " ").indexOf(" " + phrase + " ") != -1;
-}
-
-function IsPhraseMatchForUrl(phrase, stream) {
-    if (IsNull(phrase) || phrase === "" || IsNull(stream))
-        return false;
-    return stream.indexOf(phrase) != -1;
-}
-
-function IsArrayPhraseMatchForTitleSnippet(array, stream) {
-    if (IsNull(array) || IsNull(stream))
-        return false;
-
-    var length = array.length;
-    for (var i = 0; i < length; i++) {
-        if (IsPhraseMatchForTitleSnippet(array[i], stream))
-            return true;
-    }
-    return false;
-}
-
-function IsArrayPhraseMatchForUrl(array, urlStream) {
+function IsArrayPhraseMatchForUrl_Local(array, urlStream) {
     if (IsNull(array) || IsNull(urlStream))
         return false;
 
@@ -1806,13 +710,13 @@ function IsArrayPhraseMatchForUrl(array, urlStream) {
     for (var i = 0; i < length; i++) {
         var tmp = "/" + array[i] + "/";
         if (IsPhraseMatchForUrl(tmp, urlStream))
-        //if (IsPhraseMatchForUrl(array[i], urlStream))
             return true;
     }
     return false;
 }
 
-function EntityWordsFoundForTitleSnippet(phrase, wordFoundArray, stream) {
+
+function WordsFoundForTitleSnippet_Local(phrase, wordFoundArray, stream) {
     if (IsNull(phrase) || phrase === "" || IsNull(stream))
         return 0;
 
@@ -1826,94 +730,17 @@ function EntityWordsFoundForTitleSnippet(phrase, wordFoundArray, stream) {
         var termIndex = queryTermDict[term];
         if (termIndex < wordFoundArrayLength) {
             // Use word found array
-            // if (term == "adam"){
-                // LogDebug("term wordfoundarray" + termIndex + "\t" + wordFoundArray)
-            // }
             if (wordFoundArray[termIndex] > 0) {
                 matchedCount++;
             }
         }
-        else {
-        //if (termIndex >= wordFoundArrayLength || wordFoundArray[termIndex] == 0) {
-            // if (term == "adam"){
-                // LogDebug("IsPhraseMatchForTitleSnippet" + IsPhraseMatchForTitleSnippet(term, stream))
-            // }
-            if (IsPhraseMatchForTitleSnippet(term, stream)) {
-                matchedCount++;
-            }
-        }
-    }
-    termMatchedRatio = matchedCount * 1.0 / phraseWords.length;
-    // if (phrase == "adam") {
-        // LogDebug("!!!" + stream + "\t" + termMatchedRatio)
-    // }
-    return termMatchedRatio;
-}
-
-function WordsFoundForTitleSnippet(phrase, wordFoundArray, stream) {
-    if (IsNull(phrase) || phrase === "" || IsNull(stream))
-        return 0;
-
-    var termMatchedRatio = 0;
-    var phraseWords = phrase.split(" ");
-    var matchedCount = 0;
-    var phraseWordsLength = phraseWords.length;
-    var wordFoundArrayLength = wordFoundArray.length;
-    for (var i = 0; i < phraseWordsLength; i++) {
-        var term = phraseWords[i];
-        var termIndex = queryTermDict[term];
-        if (termIndex < wordFoundArrayLength) {
-            // Use word found array
-            // if (term == "adam"){
-                // LogDebug("term wordfoundarray" + termIndex + "\t" + wordFoundArray)
-            // }
-            if (wordFoundArray[termIndex] > 0) {
-                matchedCount++;
-            }
-        }
-        //else {
         if (termIndex >= wordFoundArrayLength || wordFoundArray[termIndex] == 0) {
-            // if (term == "adam"){
-                // LogDebug("IsPhraseMatchForTitleSnippet" + IsPhraseMatchForTitleSnippet(term, stream))
-            // }
             if (IsPhraseMatchForTitleSnippet(term, stream)) {
                 matchedCount++;
             }
         }
     }
     termMatchedRatio = matchedCount * 1.0 / phraseWords.length;
-    // if (phrase == "adam") {
-        // LogDebug("!!!" + stream + "\t" + termMatchedRatio)
-    // }
     return termMatchedRatio;
-}
-
-function ParseWordCandidatePresence(score) {
-    var matchArray = new Array(8);
-    for (var i = 0; i < 8; i++) {
-        if ((score & 15) > 0) {
-            matchArray[i] = 1;
-        }
-        else {
-            matchArray[i] = 0;
-        }
-        score = score >>> 4;
-    }
-    return matchArray;
-}
-
-function GenerateHashCode(str) {
-    var hash = 0, i, chr, len;
-    if (str.length === 0) return hash;
-    for (i = 0, len = str.length; i < len; i++) {
-        chr = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + chr;
-        hash = hash & 0xfffff;
-    }
-    return hash;
-}
-
-function SortNumberDesc(a, b) {
-    return b - a;
 }
 //------------------------------------------------ Utilities - End ------------------------------------------------
