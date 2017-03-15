@@ -120,7 +120,7 @@ if (!addquerylist.IsEmpty()) {
 }
 
 var documentCount = documents.count;
-if (IsNull(msSemanticFrame)) {
+if (IsNull(msSemanticFrame) || documentCount == 0) {
     for (var i = 0; i < documentCount; ++i) {
         documents[i].score = 1000.0 - i;
     }
@@ -239,11 +239,14 @@ function MSSFDecode(addQuery) {
             var intentTypeSpans = {};
             var intentTypeSpansArr = value.split("^");
             for (var k = 0, len = intentTypeSpansArr.length; k < len; k++){
-				var typeSpanStr = intentTypeSpansArr[0];
-				if(IsNull(typeSpan)){
+				var typeSpanStr = intentTypeSpansArr[k];
+				if(IsNull(typeSpanStr)){
 					continue;
 				}
-				var typSpan = typeSpanStr.split("&");
+				var typeSpan = typeSpanStr.split("&");
+				if(typeSpan.length != 2){
+					continue;
+				}
 				var intentType = typeSpan[0];
                 var span = typeSpan[1];
                 if (intentType == majorType) {
