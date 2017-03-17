@@ -101,10 +101,10 @@ var c_stopWordsList = new Array("about", "an", "and", "are", "as", "at", "be", "
 // clusterId and response intent tag
 var clusterIdToIntentType = {"39": "int_elvis", "32": "int_allvideos", "79": "int_dead", "63": "int_singer", "19": "int_albumsreleased", "38": "int_bandmembers", "20": "int_mean", "68": "int_christian", "84": "int_artist", "12": "int_cortana", "90": "int_bestlyrics", "40": "int_child", "75": "int_google", "37": "int_bestlyrics", "86": "int_meme", "58": "int_alive", "7": "int_chordchart", "88": "int_friend", "62": "int_alive", "5": "int_bestlyrics", "65": "int_write", "26": "int_allvideos", "43": "int_commercial", "54": "int_artist", "29": "int_allvideos", "61": "int_french", "13": "int_freedownload", "49": "int_picture", "42": "int_bestlyrics", "74": "int_cast", "3": "int_bestlyrics", "48": "int_beyonce", "22": "int_albumsreleased", "27": "int_albumsreleased", "28": "int_instrumental", "93": "int_wiki", "55": "int_best", "34": "int_eminem", "89": "int_albumcover", "17": "int_chordchart", "81": "int_cancion", "25": "int_beachboys", "31": "int_quote", "30": "int_allvideos", "15": "int_allvideos", "78": "int_hymn", "10000": "int_beatles", "44": "int_autobiography", "24": "int_remix", "70": "int_child", "57": "int_alive", "91": "int_composer", "80": "int_englishlyrics", "56": "int_band", "52": "int_mean", "92": "int_duet", "66": "int_bestlyrics", "60": "int_allvideos", "64": "int_name", "33": "int_best", "53": "int_dance", "72": "int_albumsreleased"};
 
+//var clusterIdToIntentType = {"237":"int_elvis","230":"int_allvideos","281":"int_dead","264":"int_singer","215":"int_albumsreleased","236":"int_bandmembers","217":"int_mean","269":"int_christian","287":"int_artist","208":"int_cortana","293":"int_bestlyrics","239":"int_child","277":"int_google","235":"int_bestlyrics","289":"int_meme","258":"int_alive","271":"int_chordchart","290":"int_friend","263":"int_alive","249":"int_bestlyrics","266":"int_write","223":"int_allvideos","242":"int_commercial","254":"int_artist","226":"int_allvideos","262":"int_french","209":"int_freedownload","248":"int_picture","241":"int_bestlyrics","276":"int_cast","227":"int_bestlyrics","247":"int_beyonce","219":"int_albumsreleased","224":"int_albumsreleased","225":"int_instrumental","296":"int_wiki","255":"int_best","232":"int_eminem","291":"int_albumcover","213":"int_chordchart","284":"int_cancion","222":"int_beachboys","229":"int_quote","228":"int_allvideos","211":"int_allvideos","280":"int_hymn","243":"int_autobiography","221":"int_remix","272":"int_child","257":"int_alive","294":"int_composer","283":"int_englishlyrics","256":"int_band","252":"int_mean","295":"int_duet","267":"int_bestlyrics","261":"int_allvideos","265":"int_name","231":"int_best","253":"int_dance","274":"int_albumsreleased"};
 // intent type and response key words
 var intentKeyWords = {"int_bandmembers": ["band members", "current members", "members"], "int_actress": ["actress"], "int_albumcover": ["album cover", "cover", "covered", "covers"], "int_eminem": ["eminem"], "int_history": ["history"], "int_single": ["single"], "int_author": ["author"], "int_meme": ["meme", "memes"], "int_analysis": ["analysis"], "int_cast": ["cast"], "int_drummer": ["drummer"], "int_dead": ["dead", "death", "died"], "int_artist": ["artist", "artists"], "int_bpm": ["bpm"], "int_awardswon": ["awards won", "awards"], "int_albumsreleased": ["albums released", "best albums", "full album", "album", "albums", "cd", "cd s", "cds", "discography"], "int_alive": ["alive", "live", "living"], "int_bestversion": ["best version", "country version", "version"], "int_name": ["name", "names"], "int_french": ["french"], "int_wiki": ["wiki", "wikipedia"], "int_grammy": ["grammy", "grammys"], "int_allvideos": ["all videos", "video", "videos", "tube", "youtube", "utube", "vimeo", "youtub", "yutube"], "int_quote": ["quote", "quotes"], "int_characters": ["characters"], "int_beachboys": ["beach boys", "boy", "boys"], "int_age": ["age"], "int_child": ["child", "children", "kids"], "int_best": ["best", "famous", "top"], "int_elvis": ["elvis"], "int_interview": ["interview"], "int_movie": ["movie", "film"], "int_duet": ["duet", "duets"], "int_son": ["son"], "int_remake": ["remake"], "int_date": ["date"], "int_rock": ["rock"], "int_anthem": ["anthem"], "int_fact": ["fact", "facts", "information"], "int_autobiography": ["autobiography", "bio", "biography", "birthplace"], "int_hit": ["hit", "hits"], "int_ballad": ["ballad"], "int_theme": ["theme"], "int_bandsinfluenced": ["bands influenced", "influence", "influenced"], "int_freedownload": ["free download", "free mp3 download", "download", "downloads"], "int_hymn": ["hymn"], "int_cancion": ["cancion", "canciones"], "int_dance": ["dance", "dancing"], "int_commercial": ["commercial"], "int_picture": ["picture", "pictures", "images", "pic", "pics"], "int_chordchart": ["chord chart", "chords key", "chords lyrics", "guitar chords", "guitar chords lyrics", "lyrics chords", "chord", "chords", "cords", "tab", "guitar", "guitarist", "guitar cords", "chordie", "echords", "guitar tab", "guitar tabs", "chorus"], "int_completelist": ["complete list", "list"], "int_key": ["key"], "int_englishlyrics": ["english lyrics", "english version"], "int_beyonce": ["beyonce"], "int_anotherwords": ["another words", "another word"], "int_background": ["background"], "int_band": ["band"], "int_performance": ["performance", "performed"], "int_adele": ["adele"], "int_beatles": ["beatles"], "int_christian": ["christian", "gospel"], "int_remix": ["remix"], "int_cortana": ["cortana"], "int_freshprince": ["fresh prince", "prince"], "int_rap": ["rap", "raps"], "int_audio": ["audio", "sound"], "int_copyright": ["copyright"], "int_cleanversion": ["clean version"], "int_mean": ["mean", "meaning", "meanings"], "int_friend": ["friend", "friends"], "int_composer": ["composer"], "int_genre": ["genre"], "int_google": ["google"], "int_write": ["write", "written", "wrote"], "int_azlyrics": ["az lyrics", "azlyrics"], "int_singer": ["singer"], "int_brother": ["brother", "brothers"], "int_bestlyrics": ["best lyrics", "christian lyrics", "find lyrics", "free lyrics", "full lyrics", "gospel lyrics", "lyric", "lyrics", "kyrics", "lirycs", "lrics", "lurics", "lyircs", "lyr", "lyrcis", "lyrcs", "lyri", "lyricd", "lyrice", "lyrivs", "lyrocs", "lyrucs", "lytics", "yrics", "lirics", "lryics", "ly", "lyics", "lyrica", "lyricks", "lyris"], "int_bassist": ["bassist"], "int_acousticversion": ["acoustic version"], "int_instrumental": ["instrumental", "karaoke", "kareoke", "karoke"], "int_accompanimenttrack": ["accompaniment track"], "int_blue": ["blue", "blues"], "int_type": ["type"], "int_hallelujah": ["hallelujah"], "int_englishtranslation": ["english translation", "translated"], "int_father": ["father"]};
 
-//var wordToIntentType = {"accompaniment track": "int_accompanimenttrack", "acoustic version": "int_acousticversion", "actress": "int_actress", "adele": "int_adele", "age": "int_age", "album cover": "int_albumcover", "cover": "int_albumcover", "covered": "int_albumcover", "covers": "int_albumcover", "albums released": "int_albumsreleased", "best albums": "int_albumsreleased", "full album": "int_albumsreleased", "album": "int_albumsreleased", "albums": "int_albumsreleased", "cd": "int_albumsreleased", "cd s": "int_albumsreleased", "cds": "int_albumsreleased", "discography": "int_albumsreleased", "alive": "int_alive", "live": "int_alive", "living": "int_alive", "all videos": "int_allvideos", "video": "int_allvideos", "videos": "int_allvideos", "tube": "int_allvideos", "youtube": "int_allvideos", "utube": "int_allvideos", "vimeo": "int_allvideos", "youtub": "int_allvideos", "yutube": "int_allvideos", "analysis": "int_analysis", "another words": "int_anotherwords", "another word": "int_anotherwords", "anthem": "int_anthem", "artist": "int_artist", "artists": "int_artist", "audio": "int_audio", "sound": "int_audio", "author": "int_author", "autobiography": "int_autobiography", "bio": "int_autobiography", "biography": "int_autobiography", "birthplace": "int_autobiography", "awards won": "int_awardswon", "awards": "int_awardswon", "az lyrics": "int_azlyrics", "azlyrics": "int_azlyrics", "background": "int_background", "ballad": "int_ballad", "band": "int_band", "band members": "int_bandmembers", "current members": "int_bandmembers", "members": "int_bandmembers", "bands influenced": "int_bandsinfluenced", "influence": "int_bandsinfluenced", "influenced": "int_bandsinfluenced", "bassist": "int_bassist", "beach boys": "int_beachboys", "boy": "int_beachboys", "boys": "int_beachboys", "beatles": "int_beatles", "best": "int_best", "famous": "int_best", "top": "int_best", "best lyrics": "int_bestlyrics", "christian lyrics": "int_bestlyrics", "find lyrics": "int_bestlyrics", "free lyrics": "int_bestlyrics", "full lyrics": "int_bestlyrics", "gospel lyrics": "int_bestlyrics", "lyric": "int_bestlyrics", "lyrics": "int_bestlyrics", "kyrics": "int_bestlyrics", "lirycs": "int_bestlyrics", "lrics": "int_bestlyrics", "lurics": "int_bestlyrics", "lyircs": "int_bestlyrics", "lyr": "int_bestlyrics", "lyrcis": "int_bestlyrics", "lyrcs": "int_bestlyrics", "lyri": "int_bestlyrics", "lyricd": "int_bestlyrics", "lyrice": "int_bestlyrics", "lyrivs": "int_bestlyrics", "lyrocs": "int_bestlyrics", "lyrucs": "int_bestlyrics", "lytics": "int_bestlyrics", "yrics": "int_bestlyrics", "lirics": "int_bestlyrics", "lryics": "int_bestlyrics", "ly": "int_bestlyrics", "lyics": "int_bestlyrics", "lyrica": "int_bestlyrics", "lyricks": "int_bestlyrics", "lyris": "int_bestlyrics", "best version": "int_bestversion", "country version": "int_bestversion", "version": "int_bestversion", "beyonce": "int_beyonce", "blue": "int_blue", "blues": "int_blue", "bpm": "int_bpm", "brother": "int_brother", "brothers": "int_brother", "cancion": "int_cancion", "canciones": "int_cancion", "cast": "int_cast", "characters": "int_characters", "child": "int_child", "children": "int_child", "kids": "int_child", "chord chart": "int_chordchart", "chords key": "int_chordchart", "chords lyrics": "int_chordchart", "guitar chords": "int_chordchart", "guitar chords lyrics": "int_chordchart", "lyrics chords": "int_chordchart", "chord": "int_chordchart", "chords": "int_chordchart", "cords": "int_chordchart", "tab": "int_chordchart", "guitar": "int_chordchart", "guitarist": "int_chordchart", "guitar cords": "int_chordchart", "chordie": "int_chordchart", "echords": "int_chordchart", "guitar tab": "int_chordchart", "guitar tabs": "int_chordchart", "chorus": "int_chordchart", "christian": "int_christian", "gospel": "int_christian", "clean version": "int_cleanversion", "commercial": "int_commercial", "complete list": "int_completelist", "list": "int_completelist", "composer": "int_composer", "copyright": "int_copyright", "cortana": "int_cortana", "dance": "int_dance", "dancing": "int_dance", "date": "int_date", "dead": "int_dead", "death": "int_dead", "died": "int_dead", "drummer": "int_drummer", "duet": "int_duet", "duets": "int_duet", "elvis": "int_elvis", "eminem": "int_eminem", "english lyrics": "int_englishlyrics", "english version": "int_englishlyrics", "english translation": "int_englishtranslation", "translated": "int_englishtranslation", "fact": "int_fact", "facts": "int_fact", "information": "int_fact", "father": "int_father", "free download": "int_freedownload", "free mp3 download": "int_freedownload", "download": "int_freedownload", "downloads": "int_freedownload", "french": "int_french", "fresh prince": "int_freshprince", "prince": "int_freshprince", "friend": "int_friend", "friends": "int_friend", "genre": "int_genre", "google": "int_google", "grammy": "int_grammy", "grammys": "int_grammy", "hallelujah": "int_hallelujah", "history": "int_history", "hit": "int_hit", "hits": "int_hit", "hymn": "int_hymn", "instrumental": "int_instrumental", "karaoke": "int_instrumental", "kareoke": "int_instrumental", "karoke": "int_instrumental", "interview": "int_interview", "key": "int_key", "mean": "int_mean", "meaning": "int_mean", "meanings": "int_mean", "meme": "int_meme", "memes": "int_meme", "movie": "int_movie", "film": "int_movie", "name": "int_name", "names": "int_name", "performance": "int_performance", "performed": "int_performance", "picture": "int_picture", "pictures": "int_picture", "images": "int_picture", "pic": "int_picture", "pics": "int_picture", "quote": "int_quote", "quotes": "int_quote", "rap": "int_rap", "raps": "int_rap", "remake": "int_remake", "remix": "int_remix", "rock": "int_rock", "singer": "int_singer", "single": "int_single", "son": "int_son", "theme": "int_theme", "type": "int_type", "wiki": "int_wiki", "wikipedia": "int_wiki", "write": "int_write", "written": "int_write", "wrote": "int_write"};
 //------------------------------------------------ Constant Define - End ------------------------------------------------
 
 var msSemanticFrame;
@@ -756,6 +756,7 @@ function GenerateEntityMatchingScore(entityList, matchData) {
     for (var i = 0; i < entityCount; i++) {
         var entityItem = entityList[i];
         var entity = entityItem.text;
+LogDebug("entity", entity, '\r\n');
         if (entityItem.score >= 1.0) {
             if (entity.indexOf(' ') != -1) {
                 if (IsPhraseMatchForTitleSnippet(entity, title)) {
@@ -1990,11 +1991,13 @@ function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArra
             authorityIsSiteConsMatchScore = GenerateAuthorityScore(topSiteScoreResult.authorityScore, MSSFDecodeResult.entity, MSSFDecodeResult.siteConstraint, url, curHostId, curDomainId, MSSFDecodeResult.officialSite, i);
             isSiteConsMatchDomain = authorityIsSiteConsMatchScore[1];
             var authorityScore = authorityIsSiteConsMatchScore[0];
+LogDebug("authorityScore", url, authorityScore, '\r\n');
 		   //var authorityScore = featureVector[30];
             specificSiteScore = topSiteScoreResult.isSpecific;
             //var intentMatchScore = GenerateIntentMatchingScore(intentMatchCondition, MSSFDecodeResult.intent, matchData, topSiteScoreResult.isIntent);
             var intentMatchScore = GenerateIntentMatchingScore(MSSFDecodeResult.otherIntents, MSSFDecodeResult.majorIntent, matchData, queryTermDict);//generate intent feature score
-            keyFeaturesOfDocuments.push(new KeyFeatures(entityMatchScore, intentMatchScore, authorityScore, specificSiteScore, 0, 0, topSiteScoreResult, rankScoreVector[i].drScoreRank, 0, isSiteConsMatchDomain));//add intentMatchScore && constraintMatchScore
+LogDebug("intentMatchScore", url, intentMatchScore, '\r\n');
+			keyFeaturesOfDocuments.push(new KeyFeatures(entityMatchScore, intentMatchScore, authorityScore, specificSiteScore, 0, 0, topSiteScoreResult, rankScoreVector[i].drScoreRank, 0, isSiteConsMatchDomain));//add intentMatchScore && constraintMatchScore
             top1EntityMatch = entityMatchScore;
             top1IntentMatch = intentMatchScore;
             sumIntentMatchTop5 += intentMatchScore;
@@ -2015,10 +2018,12 @@ function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArra
 			authorityIsSiteConsMatchScore = GenerateAuthorityScore(topSiteScoreResult.authorityScore, MSSFDecodeResult.entity, MSSFDecodeResult.siteConstraint, url, curHostId, curDomainId, MSSFDecodeResult.officialSite, i);
             isSiteConsMatchDomain = authorityIsSiteConsMatchScore[1];
             var authorityScore = authorityIsSiteConsMatchScore[0];
+LogDebug("authorityScore", url, authorityScore, '\r\n');
 			//var authorityScore = featureVector[30];
             specificSiteScore = topSiteScoreResult.isSpecific;
             //var intentMatchScore = GenerateIntentMatchingScore(intentMatchCondition, MSSFDecodeResult.intent, matchData, topSiteScoreResult.isIntent);//@Frank generate intent feature score
 			var intentMatchScore = GenerateIntentMatchingScore(MSSFDecodeResult.otherIntents, MSSFDecodeResult.majorIntent, matchData, queryTermDict);//@Frank generate intent feature score
+LogDebug("intentMatchScore", url, intentMatchScore, '\r\n');
 			keyFeaturesOfDocuments.push(new KeyFeatures(entityMatchScore, intentMatchScore, authorityScore, specificSiteScore, 0, 0, topSiteScoreResult, rankScoreVector[i].drScoreRank, 0, isSiteConsMatchDomain));//@Frank add intentMatchScore && constraintMatchScore
 			// KeyFeatures(entityMatchScore, intentMatchScore, authorityScore, specificSiteScore, guardingScore, lowQualitySiteScore, topSiteScoreResult, drScoreRank, constraintMatchScore, isSiteConsMatchDomain)
             sumIntentMatchTop5 += intentMatchScore;
@@ -2046,7 +2051,8 @@ function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArra
     var documentPosition;
     for (var i = 0; i < top20doc; i++) {
         documentPosition = i;
-        if (IsGuard(keyFeaturesOfDocuments[i], documentsLocal[i].rerankfeatures, i, entityMatchThreshold, maxDRScorePos, keyFeaturesOfDocuments[i].isSiteConsMatchDomain, sumIntentMatchTop5)) { 
+        if (IsGuard(keyFeaturesOfDocuments[i], documentsLocal[i].rerankfeatures, i, entityMatchThreshold, maxDRScorePos, keyFeaturesOfDocuments[i].isSiteConsMatchDomain, sumIntentMatchTop5)) {
+LogDebug("IsGuardSatisfiyed", documents[i].url, '\r\n');			
             rankVector.push({ index: i, signal: (0.95 - i / 20.0) });
             rankVectorInOriPlace.push({ index: i });
         }
@@ -2069,6 +2075,7 @@ function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArra
 		var currentHostId = curRerankFeatures[28];
 		var url = documents[documentPosition].url;
         if(RankerCondition1(top20doc, keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, top1EntityMatch, drScoreTop1EntityMatch, top1IntentMatch, drScoreTop1IntentMatch, constraintMatchCondition, MSSFDecodeResult, matchDataArray, curRerankFeatures)){
+LogDebug("RankerCondition1Satisfied", url, '\r\n');
 			if(!constrainMatchFinish) {
 				MSSFDecodeResult = PostWebSlotTagging(MSSFDecodeResult, canonicalQuery, matchDataArray);
 				top5ConstraintMatchSum = GenerateTop20DocConstraintMatchingScore(top20doc, matchDataArray, keyFeaturesOfDocuments, MSSFDecodeResult, documentsLocal, constraintMatchCondition);
@@ -2082,6 +2089,7 @@ function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArra
 				}
 			}
             if(RankerCondition2(drScoreThreshold, documentPosition, curKeyFeatures, curRerankFeatures, top20doc, currentHostId, documentsLocal, keyFeaturesOfDocuments, entityMatchThreshold, intentMatchThreshold, constraintMatchThreshold, url)){
+LogDebug("RankerCondition2Satisfied", url, '\r\n');
                 var curEntityMatchScore = curKeyFeatures.entityMatchScore;
                 var curIntentMatchScore = curKeyFeatures.intentMatchScore;
                 var curConstraintMatchScore = curKeyFeatures.constraintMatchScore;
@@ -2102,16 +2110,6 @@ function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArra
         }
     }
     rankVector.sort(SortDescending);
-
-	var rankVectorLog = [];
-	for(i = 0; i < top20doc; i++){
-		rankVectorLog.push({index : i, signal : 1000 - i + (0.95 - i / 20.0)});
-	}
-	for(i = 0; i < rankVector.length; i++){
-		rankVectorLog[rankVector[i].index].signal = 1000.0 - rankVectorInOriPlace[i].index + (0.95 - i / 20.0);
-	}
-	rankVectorLog.sort(SortDescending);
-
 
     //------------------------------ Step2 NewL3Score ranker End ------------------------------------
 
@@ -2142,9 +2140,6 @@ function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArra
 
 	adjustRankerVector.sort(SortDescending);
 	
-	for(var j = 0; j < top20doc; ++j){
-		var idx = adjustRankerVector[j].index;
-	}
     //----------------------------- Step3 Adjust L3 ranker End ------------------------------------
     //----------------------------- Step4 Sorted document based on AuthorityScore and NewL3Score2 Begin ------------------------------
     //a. document rank position based on authorityScore 
@@ -2169,11 +2164,11 @@ function MainRanker(subIntentId, subIntentScore, MSSFDecodeResult, matchDataArra
 			adjustRankerVector[j].index = j;
             adjustRankerVector[j].signal = 1000.0 - j + (0.95 - j / 20.0);
         }
+		adjustRankerVector.sort(SortDescending);
     }
-	adjustRankerVector.sort(SortDescending);
+
     for (i = 0; i < adjustRankerVector.length; ++i){
         documents[adjustRankerVector[i].index].score = parseInt(adjustRankerVector[i].signal);
-		var idx = adjustRankerVector[i].index;
     }
     //---------------------------- Step5 sorted final feature change End -------------------
 }
@@ -2194,6 +2189,7 @@ function GenerateTop20DocConstraintMatchingScore(top20doc, matchDataArray, keyFe
 		if(i < 5){
 			top5ConstraintMatchSum += constraintMatchScore;
 		}
+LogDebug("constraintMatchScore", url, constraintMatchScore, '\r\n');
 	}
 	return top5ConstraintMatchSum;
 }
