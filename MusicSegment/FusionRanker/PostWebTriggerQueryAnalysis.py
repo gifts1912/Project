@@ -119,14 +119,15 @@ def WholeQuerySet(fn):
 
 
 def main():
-    querySet = set()
-    allQuerySet = set()
-    fn_fusionRankerOut = "C:/Code/data/fusionRankerOut.tsv"
-   # TriggerQueryGen(fn_fusionRankerOut, querySet, allQuerySet)
+    fn_fusionRankerOut = "C:/Code/data/fusionRankerOutput.tsv"
+    fn_fusionRankerOutStableSorted = "C:/Code/data/fusionRankerOutSortedByScore.tsv"
+    StableSortDocBasedOnScore(fn_fusionRankerOut, fn_fusionRankerOutStableSorted)
+    fn_fusionRankerPostWebTrigger = "C:/Code/data/fusionRankerOutPostWebTriggerInfo.tsv"
+    triggerQuerySet = PostWebTriggerQueryInfo(fn_fusionRankerOutStableSorted, fn_fusionRankerPostWebTrigger)
+    with open("C:/Code/data/fusionRankerPostWebTriggerQuerySet.tsv", 'w', encoding='utf-8') as fw:
+        fw.write("\n".join(triggerQuerySet))
 
-    fn_Demo = "C:/Code/data/rankerOutDemo.tsv"
-    posWeb_triggerQueryDoc = PostWebTrigger(fn_Demo, 'C:/Code/data/watch.tsv')
-    print("\n".join(posWeb_triggerQueryDoc))
+
 
 if __name__ == "__main__":
     main()
